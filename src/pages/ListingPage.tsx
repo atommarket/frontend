@@ -22,7 +22,6 @@ import {
 } from '@chakra-ui/react';
 import { ArrowBackIcon, ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
 import { SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate';
-import { coin } from '@cosmjs/stargate';
 import { Listing } from '../hooks/useListing';
 import { useListing } from '../hooks/useListing';
 

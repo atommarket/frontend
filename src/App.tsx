@@ -10,7 +10,6 @@ import {
   Input,
   InputGroup,
   InputLeftElement,
-  Spinner,
 } from '@chakra-ui/react';
 import { SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate';
 import { Window as KeplrWindow } from '@keplr-wallet/types';

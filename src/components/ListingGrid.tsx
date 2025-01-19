@@ -1,4 +1,4 @@
-import { SimpleGrid, Box, Button, HStack, Text, Center, Input, Select } from '@chakra-ui/react';
+import { SimpleGrid, Box, Button, HStack, Text, Select, Center } from '@chakra-ui/react';
 import { SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate';
 import ListingCard from './ListingCard';
 import { Listing } from '../hooks/useListing';
@@ -10,7 +10,6 @@ interface ListingGridProps {
   contractAddress: string;
   walletAddress: string;
   onRefresh: () => void;
-  isLoading?: boolean;
 }
 
 export default function ListingGrid({
@@ -19,7 +18,6 @@ export default function ListingGrid({
   contractAddress,
   walletAddress,
   onRefresh,
-  isLoading = false,
 }: ListingGridProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(9);

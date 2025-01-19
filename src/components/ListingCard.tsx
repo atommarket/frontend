@@ -29,7 +29,6 @@ export default function ListingCard({
 }: ListingCardProps) {
   const navigate = useNavigate();
   const toast = useToast();
-  const [isExpanded, setIsExpanded] = useState(false);
   const [images, setImages] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -172,7 +171,7 @@ export default function ListingCard({
               src={images[currentImageIndex]}
               alt={`${listing.listing_title} - Image ${currentImageIndex + 1}`}
               borderRadius="md"
-              maxH={isExpanded ? "600px" : "200px"}
+              maxH="200px"
               objectFit="cover"
               w="full"
               transition="max-height 0.2s"
