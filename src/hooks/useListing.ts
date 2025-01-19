@@ -19,7 +19,6 @@ export interface Listing {
 
 export function useListing(client: SigningCosmWasmClient | null, contractAddress: string) {
   const [listings, setListings] = useState<Listing[]>([]);
-  const [filteredListings, setFilteredListings] = useState<Listing[]>([]);
 
   const fetchListings = useCallback(async () => {
     if (!client) return;
@@ -32,26 +31,56 @@ export function useListing(client: SigningCosmWasmClient | null, contractAddress
         tags: listing.tags || [],
       }));
       setListings(processedListings);
-      setFilteredListings(processedListings);
     } catch (error) {
       console.error('Error fetching listings:', error);
     }
   }, [client, contractAddress]);
 
-  const searchListings = useCallback((term: string) => {
-    if (!term.trim()) {
-      setFilteredListings(listings);
+  const searchListingsByTitle = useCallback(async (title: string) => {
+    if (!client || !title.trim()) {
+      await fetchListings();
       return;
     }
     
-    const searchTerm = term.toLowerCase();
-    const filtered = listings.filter(listing => 
-      listing.listing_title.toLowerCase().includes(searchTerm) ||
-      listing.text.toLowerCase().includes(searchTerm) ||
-      (listing.tags && listing.tags.some(tag => tag.toLowerCase().includes(searchTerm)))
-    );
-    setFilteredListings(filtered);
-  }, [listings]);
+    try {
+      const response = await client.queryContractSmart(contractAddress, {
+        search_listings_by_title: { 
+          title: title.trim(),
+          limit: 50
+        }
+      });
+      
+      const processedListings = response.listings.map((listing: Listing) => ({
+        ...listing,
+        tags: listing.tags || [],
+      }));
+      setListings(processedListings);
+    } catch (error) {
+      console.error('Error searching listings:', error);
+      // If search fails, fall back to all listings
+      await fetchListings();
+    }
+  }, [client, contractAddress, fetchListings]);
 
-  return { listings: filteredListings, fetchListings, searchListings };
+  const deleteListing = useCallback(async (listingId: number, walletAddress: string) => {
+    if (!client) throw new Error('Client not connected');
+    
+    const msg = {
+      delete_listing: {
+        listing_id: listingId
+      }
+    };
+
+    return await client.execute(
+      walletAddress,
+      contractAddress,
+      msg,
+      {
+        amount: [],
+        gas: "500000",
+      }
+    );
+  }, [client, contractAddress]);
+
+  return { listings, fetchListings, searchListingsByTitle, deleteListing };
 } 

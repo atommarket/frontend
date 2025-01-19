@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -13,11 +13,18 @@ import {
   IconButton,
   Badge,
   Heading,
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogContent,
+  AlertDialogOverlay,
 } from '@chakra-ui/react';
 import { ArrowBackIcon, ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
 import { SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate';
 import { coin } from '@cosmjs/stargate';
 import { Listing } from '../hooks/useListing';
+import { useListing } from '../hooks/useListing';
 
 interface ImageMetadata {
   images: {
@@ -40,6 +47,9 @@ export default function ListingPage({ client, contractAddress, walletAddress }: 
   const [images, setImages] = useState<string[]>([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const cancelRef = React.useRef<HTMLButtonElement>(null);
+  const { deleteListing } = useListing(client, contractAddress);
 
   useEffect(() => {
     const fetchListing = async () => {
@@ -159,6 +169,23 @@ export default function ListingPage({ client, contractAddress, walletAddress }: 
     } catch (error) {
       toast({ title: 'Failed to request arbitration', status: 'error' });
     }
+  };
+
+  const handleDelete = async () => {
+    if (!client || !walletAddress || !listing) return;
+    try {
+      await deleteListing(listing.listing_id, walletAddress);
+      toast({ title: 'Listing deleted successfully', status: 'success' });
+      navigate('/');
+    } catch (error) {
+      console.error('Error deleting listing:', error);
+      toast({ 
+        title: 'Failed to delete listing', 
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+        status: 'error' 
+      });
+    }
+    setIsDeleteDialogOpen(false);
   };
 
   const nextImage = () => {
@@ -370,14 +397,56 @@ export default function ListingPage({ client, contractAddress, walletAddress }: 
                   size="lg" 
                   w="full" 
                   onClick={handleRequestArbitration}
+                  mb={4}
                 >
                   Request Arbitration
+                </Button>
+              )}
+
+              {/* Delete button for sellers */}
+              {!listing.bought && listing.seller === walletAddress && (
+                <Button 
+                  colorScheme="red" 
+                  size="lg" 
+                  w="full" 
+                  onClick={() => setIsDeleteDialogOpen(true)}
+                  mt={4}
+                >
+                  Delete Listing
                 </Button>
               )}
             </Box>
           </VStack>
         </Box>
       </Box>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        isOpen={isDeleteDialogOpen}
+        leastDestructiveRef={cancelRef}
+        onClose={() => setIsDeleteDialogOpen(false)}
+      >
+        <AlertDialogOverlay>
+          <AlertDialogContent>
+            <AlertDialogHeader fontSize="lg" fontWeight="bold">
+              Delete Listing
+            </AlertDialogHeader>
+
+            <AlertDialogBody>
+              Are you sure you want to delete this listing? This action cannot be undone.
+            </AlertDialogBody>
+
+            <AlertDialogFooter>
+              <Button ref={cancelRef} onClick={() => setIsDeleteDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button colorScheme="red" onClick={handleDelete} ml={3}>
+                Delete
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
     </Container>
   );
 } 

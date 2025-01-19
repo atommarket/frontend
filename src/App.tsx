@@ -80,28 +80,23 @@ function HomePage({
   onCreateListing: () => void;
 }) {
   const [searchTerm, setSearchTerm] = useState('');
-  const { listings, fetchListings, searchListings } = useListing(client, CONTRACT_ADDRESS);
+  const { listings, fetchListings, searchListingsByTitle } = useListing(client, CONTRACT_ADDRESS);
 
   // Initial fetch of listings
   useEffect(() => {
     if (client) {
       fetchListings();
     }
-  }, [client]);
+  }, [client, fetchListings]);
 
   // Handle search with debounce
   useEffect(() => {
-    if (!searchTerm.trim()) {
-      fetchListings();
-      return;
-    }
-
     const timer = setTimeout(() => {
-      searchListings(searchTerm);
+      searchListingsByTitle(searchTerm);
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [searchTerm]);
+  }, [searchTerm, searchListingsByTitle]);
 
   return (
     <VStack spacing={8} align="stretch">
@@ -111,7 +106,7 @@ function HomePage({
             <SearchIcon color="gray.300" />
           </InputLeftElement>
           <Input
-            placeholder="Search listings..."
+            placeholder="Search listings by title..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -177,7 +172,7 @@ export default function App() {
     <Router>
       <Container maxW="container.xl" py={8}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={8}>
-          <Heading>Julian Marketplace</Heading>
+          <Heading>ATOM Market</Heading>
           {walletAddress ? (
             <Text>Connected: {walletAddress.slice(0, 8)}...{walletAddress.slice(-4)}</Text>
           ) : (
