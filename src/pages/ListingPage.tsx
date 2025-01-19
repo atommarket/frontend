@@ -97,20 +97,30 @@ export default function ListingPage({ client, contractAddress, walletAddress }: 
   const handlePurchase = async () => {
     if (!client || !walletAddress || !listing) return;
     try {
+      console.log('Attempting purchase with price:', listing.price, 'ujuno');
+      const funds = [{ amount: listing.price.toString(), denom: 'ujuno' }];
       await client.execute(
         walletAddress,
         contractAddress,
         { purchase: { listing_id: listing.listing_id } },
         {
-          amount: [coin(listing.price, 'ujuno')],
-          gas: "500000",
-        }
+          amount: [{ amount: "37500", denom: "ujuno" }],
+          gas: "500000"
+        },
+        "",
+        funds
       );
       toast({ title: 'Purchase successful', status: 'success' });
       // Refresh listing data
       navigate(0);
     } catch (error) {
-      toast({ title: 'Purchase failed', status: 'error' });
+      console.error('Purchase error:', error);
+      toast({ 
+        title: 'Purchase failed', 
+        description: error instanceof Error ? error.message : 'Unknown error',
+        status: 'error',
+        duration: 5000,
+      });
     }
   };
 

@@ -1,4 +1,4 @@
-import { Box, Button, Text, VStack, HStack, useToast, Image, Spinner } from '@chakra-ui/react';
+import { Box, Button, Text, VStack, HStack, useToast, Image, Spinner, Badge } from '@chakra-ui/react';
 import { SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate';
 import { Listing } from '../hooks/useListing';
 import { coin } from '@cosmjs/stargate';
@@ -196,9 +196,12 @@ export default function ListingCard({
         )}
 
         <Text>{listing.text}</Text>
-        <Text>Price: {listing.price / 1_000_000} JUNO</Text>
+        <HStack>
+          <Text>Price: {listing.price / 1_000_000} JUNO</Text>
+          {listing.bought && <Badge colorScheme="green">SOLD</Badge>}
+        </HStack>
         <Text>Seller: {listing.seller}</Text>
-        <Text>Tags: {listing.tags.join(', ')}</Text>
+        <Text>Tags: {(listing.tags || []).join(', ')}</Text>
 
         <HStack spacing={4} onClick={(e) => e.stopPropagation()}>
           {!listing.bought && walletAddress !== listing.seller && (
