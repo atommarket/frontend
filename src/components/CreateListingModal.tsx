@@ -37,7 +37,7 @@ interface FormData {
   images: File[];
 }
 
-const PINATA_JWT = import.meta.env.VITE_PINATA_JWT;
+const PINATA_JWT = import.meta.env.PINATA_JWT;
 const pinata = new PinataSDK({ pinataJwt: PINATA_JWT });
 
 export default function CreateListingModal({
