@@ -10,6 +10,8 @@ import {
   Input,
   InputGroup,
   InputLeftElement,
+  Image,
+  HStack,
 } from '@chakra-ui/react';
 import { SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate';
 import { Window as KeplrWindow } from '@keplr-wallet/types';
@@ -19,6 +21,7 @@ import CreateListingModal from './components/CreateListingModal';
 import ListingGrid from './components/ListingGrid';
 import ListingPage from './pages/ListingPage';
 import { useListing } from './hooks/useListing';
+import logo from './assets/logo.png';
 
 declare global {
   interface Window extends KeplrWindow {}
@@ -171,7 +174,10 @@ export default function App() {
     <Router>
       <Container maxW="container.xl" py={8}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={8}>
-          <Heading>ATOM Market</Heading>
+          <HStack spacing={4}>
+            <Image src={logo} alt="ATOM Market Logo" height="60px" />
+            <Heading size="2xl">ATOM Market</Heading>
+          </HStack>
           {walletAddress ? (
             <Text>Connected: {walletAddress.slice(0, 8)}...{walletAddress.slice(-4)}</Text>
           ) : (
