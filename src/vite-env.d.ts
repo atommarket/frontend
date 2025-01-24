@@ -1,9 +1,0 @@
-/// <reference types="vite/client" />
-
-interface ImportMetaEnv {
-  readonly PINATA_JWT: string
-}
-
-interface ImportMeta {
-  readonly env: ImportMetaEnv
-} 

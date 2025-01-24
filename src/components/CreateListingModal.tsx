@@ -17,7 +17,6 @@ import {
 import { useState } from 'react';
 import { SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate';
 import { AddIcon } from '@chakra-ui/icons';
-import { PinataSDK } from 'pinata-web3';
 
 interface CreateListingModalProps {
   isOpen: boolean;
@@ -37,28 +36,32 @@ interface FormData {
   images: File[];
 }
 
-const PINATA_JWT = import.meta.env.VITE_PINATA_JWT;
-if (!PINATA_JWT) {
-  throw new Error('No JWT token found in environment variables');
-}
-console.log('JWT token parts:', PINATA_JWT?.split('.').length || 0);
-console.log('First few characters of JWT:', PINATA_JWT?.substring(0, 10));
-
-const pinata = new PinataSDK({ pinataJwt: PINATA_JWT });
-
 const uploadToIPFS = async (files: File[]): Promise<string> => {
   try {
     if (files.length === 0) {
       throw new Error('No files to upload');
     }
 
-    // Upload all images first
+    // Upload all images through our Worker
     const imageUploads = await Promise.all(
       files.map(async (file) => {
         console.log('Uploading file:', file.name);
-        const upload = await pinata.upload.file(file);
-        console.log('Upload response:', upload);
-        return upload.IpfsHash;
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        const response = await fetch('https://misty-river-de35.frgrasset.workers.dev/', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Failed to upload file');
+        }
+
+        const result = await response.json();
+        console.log('Upload response:', result);
+        return result.IpfsHash;
       })
     );
 
@@ -72,14 +75,28 @@ const uploadToIPFS = async (files: File[]): Promise<string> => {
 
     // Upload the metadata JSON
     console.log('Uploading metadata:', metadata);
-    const metadataUpload = await pinata.upload.json(metadata);
-    console.log('Metadata upload response:', metadataUpload);
+    const metadataFormData = new FormData();
+    const metadataBlob = new Blob([JSON.stringify(metadata)], { type: 'application/json' });
+    metadataFormData.append('file', metadataBlob, 'metadata.json');
 
-    if (!metadataUpload.IpfsHash) {
-      throw new Error('No IPFS hash received from Pinata for metadata');
+    const metadataResponse = await fetch('https://misty-river-de35.frgrasset.workers.dev/', {
+      method: 'POST',
+      body: metadataFormData,
+    });
+
+    if (!metadataResponse.ok) {
+      const error = await metadataResponse.json();
+      throw new Error(error.message || 'Failed to upload metadata');
     }
 
-    const metadataUrl = `https://gateway.pinata.cloud/ipfs/${metadataUpload.IpfsHash}`;
+    const metadataResult = await metadataResponse.json();
+    console.log('Metadata upload response:', metadataResult);
+
+    if (!metadataResult.IpfsHash) {
+      throw new Error('No IPFS hash received from Worker for metadata');
+    }
+
+    const metadataUrl = `https://gateway.pinata.cloud/ipfs/${metadataResult.IpfsHash}`;
     console.log('Final metadata URL:', metadataUrl);
     return metadataUrl;
   } catch (error) {
