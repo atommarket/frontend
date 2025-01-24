@@ -37,8 +37,56 @@ interface FormData {
   images: File[];
 }
 
-const PINATA_JWT = import.meta.env.PINATA_JWT;
+const PINATA_JWT = import.meta.env.VITE_PINATA_JWT;
+if (!PINATA_JWT) {
+  throw new Error('No JWT token found in environment variables');
+}
+console.log('JWT token parts:', PINATA_JWT?.split('.').length || 0);
+console.log('First few characters of JWT:', PINATA_JWT?.substring(0, 10));
+
 const pinata = new PinataSDK({ pinataJwt: PINATA_JWT });
+
+const uploadToIPFS = async (files: File[]): Promise<string> => {
+  try {
+    if (files.length === 0) {
+      throw new Error('No files to upload');
+    }
+
+    // Upload all images first
+    const imageUploads = await Promise.all(
+      files.map(async (file) => {
+        console.log('Uploading file:', file.name);
+        const upload = await pinata.upload.file(file);
+        console.log('Upload response:', upload);
+        return upload.IpfsHash;
+      })
+    );
+
+    // Create a metadata JSON containing all image CIDs
+    const metadata = {
+      images: imageUploads.map(hash => ({
+        cid: hash,
+        url: `https://gateway.pinata.cloud/ipfs/${hash}`
+      }))
+    };
+
+    // Upload the metadata JSON
+    console.log('Uploading metadata:', metadata);
+    const metadataUpload = await pinata.upload.json(metadata);
+    console.log('Metadata upload response:', metadataUpload);
+
+    if (!metadataUpload.IpfsHash) {
+      throw new Error('No IPFS hash received from Pinata for metadata');
+    }
+
+    const metadataUrl = `https://gateway.pinata.cloud/ipfs/${metadataUpload.IpfsHash}`;
+    console.log('Final metadata URL:', metadataUrl);
+    return metadataUrl;
+  } catch (error) {
+    console.error('Error uploading to IPFS:', error);
+    throw error;
+  }
+};
 
 export default function CreateListingModal({
   isOpen,
@@ -78,48 +126,6 @@ export default function CreateListingModal({
         ...prev,
         images: [...prev.images, ...newImages],
       }));
-    }
-  };
-
-  const uploadToIPFS = async (files: File[]): Promise<string> => {
-    try {
-      if (files.length === 0) {
-        throw new Error('No files to upload');
-      }
-
-      // Upload all images first
-      const imageUploads = await Promise.all(
-        files.map(async (file) => {
-          console.log('Uploading file:', file.name);
-          const upload = await pinata.upload.file(file);
-          console.log('Upload response:', upload);
-          return upload.IpfsHash;
-        })
-      );
-
-      // Create a metadata JSON containing all image CIDs
-      const metadata = {
-        images: imageUploads.map(hash => ({
-          cid: hash,
-          url: `https://gateway.pinata.cloud/ipfs/${hash}`
-        }))
-      };
-
-      // Upload the metadata JSON
-      console.log('Uploading metadata:', metadata);
-      const metadataUpload = await pinata.upload.json(metadata);
-      console.log('Metadata upload response:', metadataUpload);
-
-      if (!metadataUpload.IpfsHash) {
-        throw new Error('No IPFS hash received from Pinata for metadata');
-      }
-
-      const metadataUrl = `https://gateway.pinata.cloud/ipfs/${metadataUpload.IpfsHash}`;
-      console.log('Final metadata URL:', metadataUrl);
-      return metadataUrl;
-    } catch (error) {
-      console.error('Error uploading to IPFS:', error);
-      throw error;
     }
   };
 
