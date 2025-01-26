@@ -18,6 +18,8 @@ import { Window as KeplrWindow } from '@keplr-wallet/types';
 import { SearchIcon } from '@chakra-ui/icons';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import CreateListingModal from './components/CreateListingModal';
+import CreateProfileModal from './components/CreateProfileModal';
+import ViewProfileModal from './components/ViewProfileModal';
 import ListingGrid from './components/ListingGrid';
 import ListingPage from './pages/ListingPage';
 import { useListing } from './hooks/useListing';
@@ -135,7 +137,10 @@ function HomePage({
 export default function App() {
   const [client, setClient] = useState<SigningCosmWasmClient | null>(null);
   const [walletAddress, setWalletAddress] = useState<string>('');
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [hasProfile, setHasProfile] = useState<boolean>(false);
+  const { isOpen: isListingModalOpen, onOpen: onListingModalOpen, onClose: onListingModalClose } = useDisclosure();
+  const { isOpen: isProfileModalOpen, onOpen: onProfileModalOpen, onClose: onProfileModalClose } = useDisclosure();
+  const { isOpen: isViewProfileOpen, onOpen: onViewProfileOpen, onClose: onViewProfileClose } = useDisclosure();
 
   const connectWallet = async () => {
     if (!window.keplr) {
@@ -170,6 +175,25 @@ export default function App() {
     }
   };
 
+  const checkProfile = async () => {
+    if (!client || !walletAddress) return;
+    try {
+      const response = await client.queryContractSmart(CONTRACT_ADDRESS, {
+        profile: { address: walletAddress }
+      });
+      setHasProfile(!!response.profile);
+    } catch (error) {
+      console.error('Error checking profile:', error);
+      setHasProfile(false);
+    }
+  };
+
+  useEffect(() => {
+    if (client && walletAddress) {
+      checkProfile();
+    }
+  }, [client, walletAddress]);
+
   return (
     <Router>
       <Container maxW="container.xl" py={8}>
@@ -178,11 +202,24 @@ export default function App() {
             <Image src={logo} alt="ATOM Market Logo" height="60px" />
             <Heading size="2xl">ATOM Market</Heading>
           </HStack>
-          {walletAddress ? (
-            <Text>Connected: {walletAddress.slice(0, 8)}...{walletAddress.slice(-4)}</Text>
-          ) : (
-            <Button onClick={connectWallet}>Connect Keplr</Button>
-          )}
+          <HStack spacing={4}>
+            {walletAddress ? (
+              <>
+                <Text>Connected: {walletAddress.slice(0, 8)}...{walletAddress.slice(-4)}</Text>
+                {hasProfile ? (
+                  <Button colorScheme="blue" onClick={onViewProfileOpen}>
+                    View Profile
+                  </Button>
+                ) : (
+                  <Button colorScheme="green" onClick={onProfileModalOpen}>
+                    Create Profile
+                  </Button>
+                )}
+              </>
+            ) : (
+              <Button onClick={connectWallet}>Connect Keplr</Button>
+            )}
+          </HStack>
         </Box>
 
         <Routes>
@@ -192,7 +229,7 @@ export default function App() {
               <HomePage 
                 client={client}
                 walletAddress={walletAddress}
-                onCreateListing={onOpen}
+                onCreateListing={onListingModalOpen}
               />
             } 
           />
@@ -210,14 +247,37 @@ export default function App() {
         </Routes>
 
         <CreateListingModal
-          isOpen={isOpen}
-          onClose={onClose}
+          isOpen={isListingModalOpen}
+          onClose={onListingModalClose}
           client={client}
           contractAddress={CONTRACT_ADDRESS}
           walletAddress={walletAddress}
           onSuccess={() => {
-            onClose();
+            onListingModalClose();
             window.location.reload();
+          }}
+        />
+
+        <CreateProfileModal
+          isOpen={isProfileModalOpen}
+          onClose={onProfileModalClose}
+          client={client}
+          contractAddress={CONTRACT_ADDRESS}
+          walletAddress={walletAddress}
+          onSuccess={() => {
+            onProfileModalClose();
+            checkProfile();
+          }}
+        />
+
+        <ViewProfileModal
+          isOpen={isViewProfileOpen}
+          onClose={onViewProfileClose}
+          client={client}
+          contractAddress={CONTRACT_ADDRESS}
+          walletAddress={walletAddress}
+          onProfileDeleted={() => {
+            setHasProfile(false);
           }}
         />
       </Container>

@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate';
+import { useIPFS } from './useIPFS';
 
 export interface Listing {
   listing_id: number;
@@ -19,6 +20,7 @@ export interface Listing {
 
 export function useListing(client: SigningCosmWasmClient | null, contractAddress: string) {
   const [listings, setListings] = useState<Listing[]>([]);
+  const { unpinFile } = useIPFS();
 
   const fetchListings = useCallback(async () => {
     if (!client) return;
@@ -65,13 +67,24 @@ export function useListing(client: SigningCosmWasmClient | null, contractAddress
   const deleteListing = useCallback(async (listingId: number, walletAddress: string) => {
     if (!client) throw new Error('Client not connected');
     
+    // First, get the listing to get its external_id (IPFS CID)
+    const response = await client.queryContractSmart(contractAddress, {
+      listing: { listing_id: listingId }
+    });
+    
+    const listing = response.listing;
+    if (!listing) {
+      throw new Error('Listing not found');
+    }
+
+    // Delete the listing from the contract
     const msg = {
       delete_listing: {
         listing_id: listingId
       }
     };
 
-    return await client.execute(
+    await client.execute(
       walletAddress,
       contractAddress,
       msg,
@@ -80,7 +93,22 @@ export function useListing(client: SigningCosmWasmClient | null, contractAddress
         gas: "500000",
       }
     );
-  }, [client, contractAddress]);
+
+    // If the listing had an external_id (IPFS CID), unpin it
+    if (listing.external_id) {
+      try {
+        // Extract CID from the IPFS URL
+        const ipfsUrl = new URL(listing.external_id);
+        const cid = ipfsUrl.pathname.split('/').pop();
+        if (cid) {
+          await unpinFile(cid);
+        }
+      } catch (error) {
+        console.error('Error unpinning file:', error);
+        // We don't throw here as the listing is already deleted
+      }
+    }
+  }, [client, contractAddress, unpinFile]);
 
   return { listings, fetchListings, searchListingsByTitle, deleteListing };
 } 

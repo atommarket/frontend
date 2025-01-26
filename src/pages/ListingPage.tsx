@@ -24,6 +24,7 @@ import { ArrowBackIcon, ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/ico
 import { SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate';
 import { Listing } from '../hooks/useListing';
 import { useListing } from '../hooks/useListing';
+import { useIPFS } from '../hooks/useIPFS';
 
 interface ImageMetadata {
   images: {
@@ -49,6 +50,7 @@ export default function ListingPage({ client, contractAddress, walletAddress }: 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const cancelRef = React.useRef<HTMLButtonElement>(null);
   const { deleteListing } = useListing(client, contractAddress);
+  const { unpinFile } = useIPFS();
 
   useEffect(() => {
     const fetchListing = async () => {
@@ -154,6 +156,21 @@ export default function ListingPage({ client, contractAddress, walletAddress }: 
           gas: "500000",
         }
       );
+
+      // After marking as received, unpin the IPFS files
+      if (listing.external_id) {
+        try {
+          const ipfsUrl = new URL(listing.external_id);
+          const cid = ipfsUrl.pathname.split('/').pop();
+          if (cid) {
+            await unpinFile(cid);
+          }
+        } catch (error) {
+          console.error('Error unpinning file:', error);
+          // Don't throw here as the main operation succeeded
+        }
+      }
+
       toast({ title: 'Marked as received', status: 'success' });
       navigate(0);
     } catch (error) {
@@ -177,6 +194,44 @@ export default function ListingPage({ client, contractAddress, walletAddress }: 
       navigate(0);
     } catch (error) {
       toast({ title: 'Failed to request arbitration', status: 'error' });
+    }
+  };
+
+  const handleCancelSale = async () => {
+    if (!client || !walletAddress || !listing) return;
+    try {
+      await client.execute(
+        walletAddress,
+        contractAddress,
+        { seller_cancel_sale: { listing_id: listing.listing_id } },
+        {
+          amount: [],
+          gas: "500000",
+        }
+      );
+      toast({ title: 'Sale cancelled successfully', status: 'success' });
+      navigate(0);
+    } catch (error) {
+      toast({ title: 'Failed to cancel sale', status: 'error' });
+    }
+  };
+
+  const handleCancelPurchase = async () => {
+    if (!client || !walletAddress || !listing) return;
+    try {
+      await client.execute(
+        walletAddress,
+        contractAddress,
+        { cancel_purchase: { listing_id: listing.listing_id } },
+        {
+          amount: [],
+          gas: "500000",
+        }
+      );
+      toast({ title: 'Purchase cancelled successfully', status: 'success' });
+      navigate(0);
+    } catch (error) {
+      toast({ title: 'Failed to cancel purchase', status: 'error' });
     }
   };
 
@@ -375,15 +430,40 @@ export default function ListingPage({ client, contractAddress, walletAddress }: 
                 </Button>
               )}
               
-              {listing.bought && listing.seller === walletAddress && !listing.shipped && (
+              {listing.bought && listing.seller === walletAddress && !listing.received && (
+                <>
+                  {!listing.shipped && (
+                    <Button 
+                      colorScheme="green" 
+                      size="lg" 
+                      w="full" 
+                      onClick={handleMarkShipped}
+                      mb={4}
+                    >
+                      Mark as Shipped
+                    </Button>
+                  )}
+                  <Button 
+                    colorScheme="red" 
+                    size="lg" 
+                    w="full" 
+                    onClick={handleCancelSale}
+                    mb={4}
+                  >
+                    Cancel Sale
+                  </Button>
+                </>
+              )}
+              
+              {listing.bought && listing.buyer === walletAddress && !listing.shipped && (
                 <Button 
-                  colorScheme="green" 
+                  colorScheme="red" 
                   size="lg" 
                   w="full" 
-                  onClick={handleMarkShipped}
+                  onClick={handleCancelPurchase}
                   mb={4}
                 >
-                  Mark as Shipped
+                  Cancel Purchase
                 </Button>
               )}
               

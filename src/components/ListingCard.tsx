@@ -4,6 +4,7 @@ import { Listing } from '../hooks/useListing';
 import { coin } from '@cosmjs/stargate';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useIPFS } from '../hooks/useIPFS';
 
 interface ImageMetadata {
   images: {
@@ -32,6 +33,7 @@ export default function ListingCard({
   const [images, setImages] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const { unpinFile } = useIPFS();
 
   useEffect(() => {
     const fetchImages = async () => {
@@ -109,6 +111,21 @@ export default function ListingCard({
           gas: "500000",
         }
       );
+
+      // After marking as received, unpin the IPFS files
+      if (listing.external_id) {
+        try {
+          const ipfsUrl = new URL(listing.external_id);
+          const cid = ipfsUrl.pathname.split('/').pop();
+          if (cid) {
+            await unpinFile(cid);
+          }
+        } catch (error) {
+          console.error('Error unpinning file:', error);
+          // Don't throw here as the main operation succeeded
+        }
+      }
+
       onSuccess();
       toast({ title: 'Marked as received', status: 'success' });
     } catch (error) {
@@ -132,6 +149,44 @@ export default function ListingCard({
       toast({ title: 'Arbitration requested', status: 'success' });
     } catch (error) {
       toast({ title: 'Failed to request arbitration', status: 'error' });
+    }
+  };
+
+  const handleCancelSale = async () => {
+    if (!client || !walletAddress) return;
+    try {
+      await client.execute(
+        walletAddress,
+        contractAddress,
+        { seller_cancel_sale: { listing_id: listing.listing_id } },
+        {
+          amount: [],
+          gas: "500000",
+        }
+      );
+      onSuccess();
+      toast({ title: 'Sale cancelled successfully', status: 'success' });
+    } catch (error) {
+      toast({ title: 'Failed to cancel sale', status: 'error' });
+    }
+  };
+
+  const handleCancelPurchase = async () => {
+    if (!client || !walletAddress) return;
+    try {
+      await client.execute(
+        walletAddress,
+        contractAddress,
+        { cancel_purchase: { listing_id: listing.listing_id } },
+        {
+          amount: [],
+          gas: "500000",
+        }
+      );
+      onSuccess();
+      toast({ title: 'Purchase cancelled successfully', status: 'success' });
+    } catch (error) {
+      toast({ title: 'Failed to cancel purchase', status: 'error' });
     }
   };
 
@@ -209,9 +264,22 @@ export default function ListingCard({
             </Button>
           )}
           
-          {listing.bought && listing.seller === walletAddress && !listing.shipped && (
-            <Button colorScheme="green" onClick={handleMarkShipped}>
-              Mark Shipped
+          {listing.bought && listing.seller === walletAddress && !listing.received && (
+            <>
+              {!listing.shipped && (
+                <Button colorScheme="green" onClick={handleMarkShipped}>
+                  Mark Shipped
+                </Button>
+              )}
+              <Button colorScheme="red" onClick={handleCancelSale}>
+                Cancel Sale
+              </Button>
+            </>
+          )}
+          
+          {listing.bought && listing.buyer === walletAddress && !listing.shipped && (
+            <Button colorScheme="red" onClick={handleCancelPurchase}>
+              Cancel Purchase
             </Button>
           )}
           
