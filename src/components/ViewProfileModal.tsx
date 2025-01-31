@@ -22,7 +22,7 @@ import {
 } from '@chakra-ui/react';
 import { useState, useRef } from 'react';
 import { SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate';
-import { useProfile, Profile } from '../hooks/useProfile';
+import { useProfile } from '../hooks/useProfile';
 
 interface ViewProfileModalProps {
   isOpen: boolean;
