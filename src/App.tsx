@@ -12,10 +12,12 @@ import {
   InputLeftElement,
   Image,
   HStack,
+  useColorMode,
+  IconButton,
 } from '@chakra-ui/react';
 import { SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate';
 import { Window as KeplrWindow } from '@keplr-wallet/types';
-import { SearchIcon } from '@chakra-ui/icons';
+import { SearchIcon, MoonIcon, SunIcon, AddIcon } from '@chakra-ui/icons';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import CreateListingModal from './components/CreateListingModal';
 import CreateProfileModal from './components/CreateProfileModal';
@@ -77,11 +79,9 @@ const chainConfig = {
 function HomePage({ 
   client, 
   walletAddress, 
-  onCreateListing 
 }: { 
   client: SigningCosmWasmClient | null;
   walletAddress: string;
-  onCreateListing: () => void;
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const { listings, fetchListings, searchListingsByTitle } = useListing(client, CONTRACT_ADDRESS);
@@ -117,12 +117,6 @@ function HomePage({
         </InputGroup>
       </Box>
 
-      {walletAddress && (
-        <Button colorScheme="blue" onClick={onCreateListing}>
-          Create New Listing
-        </Button>
-      )}
-
       <ListingGrid
         listings={listings}
         client={client}
@@ -141,6 +135,7 @@ export default function App() {
   const { isOpen: isListingModalOpen, onOpen: onListingModalOpen, onClose: onListingModalClose } = useDisclosure();
   const { isOpen: isProfileModalOpen, onOpen: onProfileModalOpen, onClose: onProfileModalClose } = useDisclosure();
   const { isOpen: isViewProfileOpen, onOpen: onViewProfileOpen, onClose: onViewProfileClose } = useDisclosure();
+  const { colorMode, toggleColorMode } = useColorMode();
 
   const connectWallet = async () => {
     if (!window.keplr) {
@@ -203,9 +198,18 @@ export default function App() {
             <Heading size="2xl">ATOM Market</Heading>
           </HStack>
           <HStack spacing={4}>
+            <IconButton
+              aria-label="Toggle color mode"
+              icon={colorMode === 'light' ? <MoonIcon /> : <SunIcon />}
+              onClick={toggleColorMode}
+              variant="ghost"
+            />
             {walletAddress ? (
               <>
                 <Text>Connected: {walletAddress.slice(0, 8)}...{walletAddress.slice(-4)}</Text>
+                <Button colorScheme="blue" onClick={onListingModalOpen} leftIcon={<AddIcon />}>
+                  Create Listing
+                </Button>
                 {hasProfile ? (
                   <Button colorScheme="blue" onClick={onViewProfileOpen}>
                     View Profile
@@ -229,7 +233,6 @@ export default function App() {
               <HomePage 
                 client={client}
                 walletAddress={walletAddress}
-                onCreateListing={onListingModalOpen}
               />
             } 
           />

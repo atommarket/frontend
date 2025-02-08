@@ -19,6 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogContent,
   AlertDialogOverlay,
+  useColorModeValue,
 } from '@chakra-ui/react';
 import { ArrowBackIcon, ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
 import { SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate';
@@ -51,6 +52,8 @@ export default function ListingPage({ client, contractAddress, walletAddress }: 
   const cancelRef = React.useRef<HTMLButtonElement>(null);
   const { deleteListing } = useListing(client, contractAddress);
   const { unpinFile } = useIPFS();
+  const bgColor = useColorModeValue('white', 'gray.700');
+  const borderColor = useColorModeValue('gray.200', 'gray.600');
 
   useEffect(() => {
     const fetchListing = async () => {
@@ -343,7 +346,9 @@ export default function ListingPage({ client, contractAddress, walletAddress }: 
             ) : (
               <Box
                 borderRadius="lg"
-                bg="gray.100"
+                bg={bgColor}
+                borderWidth={1}
+                borderColor={borderColor}
                 h="400px"
                 display="flex"
                 alignItems="center"
@@ -376,7 +381,14 @@ export default function ListingPage({ client, contractAddress, walletAddress }: 
         </Box>
 
         {/* Listing Details */}
-        <Box flex="1">
+        <Box 
+          flex="1" 
+          bg={bgColor} 
+          p={6} 
+          borderRadius="lg"
+          borderWidth={1}
+          borderColor={borderColor}
+        >
           <VStack align="stretch" spacing={4}>
             <Heading as="h1" size="xl">{listing.listing_title}</Heading>
             

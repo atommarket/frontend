@@ -1,4 +1,4 @@
-import { Box, Button, Text, VStack, HStack, useToast, Image, Spinner, Badge } from '@chakra-ui/react';
+import { Box, Button, Text, VStack, HStack, useToast, Image, Spinner, Badge, useColorModeValue } from '@chakra-ui/react';
 import { SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate';
 import { Listing } from '../hooks/useListing';
 import { coin } from '@cosmjs/stargate';
@@ -34,6 +34,8 @@ export default function ListingCard({
   const [isLoading, setIsLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const { unpinFile } = useIPFS();
+  const bgColor = useColorModeValue('white', 'gray.700');
+  const borderColor = useColorModeValue('gray.200', 'gray.600');
 
   useEffect(() => {
     const fetchImages = async () => {
@@ -212,6 +214,8 @@ export default function ListingCard({
       onClick={handleClick}
       _hover={{ shadow: 'md' }}
       transition="all 0.2s"
+      bg={bgColor}
+      borderColor={borderColor}
     >
       <VStack align="start" spacing={2}>
         <Text fontSize="xl" fontWeight="bold">{listing.listing_title}</Text>
