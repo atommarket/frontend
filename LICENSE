@@ -1,0 +1,82 @@
+PROPRIETARY SOFTWARE LICENSE WITH REVENUE SHARING
+
+Copyright (c) 2025 atommarket. All rights reserved.
+
+IMPORTANT: READ CAREFULLY BEFORE USING THIS SOFTWARE OR ITS CONCEPTS
+
+This software, including all source code, documentation, algorithms, business logic, 
+concepts, ideas, and methodologies (collectively, the "Work"), is proprietary and 
+confidential to atommarket ("Licensor").
+
+TERMS AND CONDITIONS:
+
+1. GRANT OF LIMITED LICENSE
+   Subject to the terms of this license, Licensor grants you a limited, non-exclusive, 
+   non-transferable license to view the source code for evaluation purposes only.
+
+2. PROHIBITED USES
+   You may NOT:
+   - Use any part of this code in production systems
+   - Copy, modify, or create derivative works based on this code
+   - Implement similar functionality using the concepts or ideas contained herein
+   - Reverse engineer, decompile, or extract algorithms from this software
+   - Use this work as inspiration for competing products or services
+
+3. COMMERCIAL USE AND REVENUE SHARING
+   If you wish to use any part of this Work, its concepts, ideas, algorithms, or 
+   similar functionality in any commercial product or service, you must:
+   
+   a) Obtain written permission from Licensor prior to any such use
+   b) Enter into a separate commercial licensing agreement
+   c) Pay ongoing revenue sharing of 15% of gross revenue from any product or 
+      service that incorporates or is inspired by this Work
+   d) Provide quarterly revenue reports and payments
+
+4. DERIVATIVE WORKS AND IDEA IMPLEMENTATION
+   Any software, service, or product that implements concepts substantially similar 
+   to those contained in this Work, regardless of the programming language or 
+   implementation method used, shall be considered a derivative work subject to 
+   the revenue sharing requirements above.
+
+5. DEFINITION OF SUBSTANTIAL SIMILARITY
+   Substantial similarity includes but is not limited to:
+   - Implementing similar marketplace functionality
+   - Using comparable smart contract structures
+   - Adopting similar business logic or workflows
+   - Creating competing decentralized marketplace solutions
+   - Implementing any key algorithmic concepts from this Work
+
+6. ENFORCEMENT AND DETECTION
+   Licensor reserves the right to monitor public repositories, commercial products, 
+   and services to detect unauthorized use of the Work or substantially similar 
+   implementations.
+
+7. LEGAL REMEDIES
+   Unauthorized use of this Work may result in:
+   - Immediate cease and desist demands
+   - Legal action for copyright and trade secret infringement
+   - Claims for damages including lost profits
+   - Injunctive relief to stop unauthorized use
+   - Recovery of attorney fees and court costs
+
+8. NO WARRANTY
+   THIS WORK IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. LICENSOR DISCLAIMS 
+   ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING MERCHANTABILITY AND FITNESS FOR 
+   A PARTICULAR PURPOSE.
+
+9. LIMITATION OF LIABILITY
+   IN NO EVENT SHALL LICENSOR BE LIABLE FOR ANY DAMAGES ARISING FROM USE OF THIS 
+   WORK, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+
+10. CONTACT FOR LICENSING
+    For commercial licensing inquiries or to report unauthorized use:
+    Email: [Your contact email]
+    
+11. GOVERNING LAW
+    This license shall be governed by the laws of [Your jurisdiction].
+
+BY ACCESSING, VIEWING, OR USING THIS SOFTWARE IN ANY WAY, YOU ACKNOWLEDGE THAT 
+YOU HAVE READ, UNDERSTOOD, AND AGREE TO BE BOUND BY THESE TERMS.
+
+VIOLATION OF THIS LICENSE WILL RESULT IN IMMEDIATE TERMINATION OF ALL RIGHTS 
+AND MAY SUBJECT YOU TO LEGAL ACTION.
