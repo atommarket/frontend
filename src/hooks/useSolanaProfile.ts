@@ -54,7 +54,7 @@ export function useSolanaProfile() {
 
     const [profilePda] = deriveProfilePda(publicKey, PROGRAM_ID);
 
-    const tx = await program.methods
+    const tx = await (program as any).methods
       .createProfile(profileName)
       .accounts({
         profile: profilePda,

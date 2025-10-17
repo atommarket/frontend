@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { PublicKey, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
-import { BN } from '@coral-xyz/anchor';
+import * as anchor from '@coral-xyz/anchor';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useSolanaProgram } from './useSolanaProgram';
 import { 
@@ -129,9 +129,9 @@ export function useSolanaListing() {
     const nextListingId = config.lastListingId.toNumber() + 1;
     
     const [listingPda] = deriveListingPda(nextListingId, PROGRAM_ID);
-    const priceInLamports = new BN(priceInSol * LAMPORTS_PER_SOL);
+    const priceInLamports = new anchor.BN(priceInSol * LAMPORTS_PER_SOL);
 
-    const tx = await program.methods
+    const tx = await (program as any).methods
       .createListing(listingTitle, externalId, text, tags, contact, priceInLamports)
       .accounts({
         config: configPda,
@@ -152,7 +152,7 @@ export function useSolanaListing() {
     const [listingPda] = deriveListingPda(listingId, PROGRAM_ID);
     const [escrowPda] = deriveEscrowPda(listingId, PROGRAM_ID);
 
-    const tx = await program.methods
+    const tx = await (program as any).methods
       .purchase()
       .accounts({
         listing: listingPda,
@@ -176,7 +176,7 @@ export function useSolanaListing() {
     const listing = await (program.account as any).listing.fetch(listingPda);
     const [relationshipPda] = deriveRelationshipPda(listing.seller, listing.buyer!, PROGRAM_ID);
 
-    const tx = await program.methods
+    const tx = await (program as any).methods
       .signShipped()
       .accounts({
         listing: listingPda,
@@ -197,7 +197,7 @@ export function useSolanaListing() {
     const [listingPda] = deriveListingPda(listingId, PROGRAM_ID);
     const [escrowPda] = deriveEscrowPda(listingId, PROGRAM_ID);
 
-    const tx = await program.methods
+    const tx = await (program as any).methods
       .signReceived()
       .accounts({
         listing: listingPda,

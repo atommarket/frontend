@@ -1,4 +1,10 @@
 export const IDL = {
+  "address": "ELhZ8euFpQ1pzQUiUofcVjLh2MFKRDHtcMeZDaRLFTLy",
+  "metadata": {
+    "name": "solana_marketplace",
+    "version": "0.1.0",
+    "spec": "0.1.0"
+  },
   "version": "0.1.0",
   "name": "solana_marketplace",
   "instructions": [

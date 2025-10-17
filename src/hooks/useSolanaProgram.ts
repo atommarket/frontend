@@ -19,7 +19,6 @@ export function useSolanaProgram() {
 
     return new Program(
       IDL as any,
-      PROGRAM_ID,
       provider
     );
   }, [connection, wallet]);
