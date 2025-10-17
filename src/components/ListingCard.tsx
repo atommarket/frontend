@@ -62,7 +62,7 @@ export default function ListingCard({
   const handlePurchase = async () => {
     if (!walletAddress) return;
     try {
-      await purchaseListing(listing.listingId, listing.price);
+      await purchaseListing(listing.listingId);
       onSuccess();
       toast({ title: 'Purchase successful', status: 'success' });
     } catch (error) {

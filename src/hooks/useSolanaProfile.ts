@@ -25,7 +25,7 @@ export function useSolanaProfile() {
     setLoading(true);
     try {
       const [profilePda] = deriveProfilePda(userPubkey, PROGRAM_ID);
-      const profileAccount = await program.account.profile.fetch(profilePda);
+      const profileAccount = await (program.account as any).profile.fetch(profilePda);
       
       const profileData: SolanaProfile = {
         owner: profileAccount.owner.toString(),

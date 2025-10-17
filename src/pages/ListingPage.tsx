@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -84,7 +84,7 @@ export default function ListingPage({ walletAddress }: ListingPageProps) {
     if (!walletAddress || !listing) return;
     try {
       console.log('Attempting purchase with price:', listing.price, 'lamports');
-      await purchaseListing(listing.listingId, listing.price);
+      await purchaseListing(listing.listingId);
       toast({ title: 'Purchase successful', status: 'success' });
       // Refresh listing data
       navigate(0);

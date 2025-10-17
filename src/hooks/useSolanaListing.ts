@@ -31,7 +31,7 @@ export interface SolanaListing {
 }
 
 export function useSolanaListing() {
-  const { program, connection } = useSolanaProgram();
+  const { program } = useSolanaProgram();
   const { publicKey } = useWallet();
   const [listings, setListings] = useState<SolanaListing[]>([]);
   const [loading, setLoading] = useState(false);
@@ -41,9 +41,9 @@ export function useSolanaListing() {
     
     setLoading(true);
     try {
-      const listingAccounts = await program.account.listing.all();
+      const listingAccounts = await (program.account as any).listing.all();
       
-      const processedListings: SolanaListing[] = listingAccounts.map((account) => ({
+      const processedListings: SolanaListing[] = listingAccounts.map((account: any) => ({
         listingId: account.account.listingId.toNumber(),
         listingTitle: account.account.listingTitle,
         externalId: account.account.externalId,
@@ -77,13 +77,13 @@ export function useSolanaListing() {
     
     setLoading(true);
     try {
-      const listingAccounts = await program.account.listing.all();
+      const listingAccounts = await (program.account as any).listing.all();
       
-      const filtered = listingAccounts.filter((account) =>
+      const filtered = listingAccounts.filter((account: any) =>
         account.account.listingTitle.toLowerCase().includes(title.toLowerCase())
       );
       
-      const processedListings: SolanaListing[] = filtered.map((account) => ({
+      const processedListings: SolanaListing[] = filtered.map((account: any) => ({
         listingId: account.account.listingId.toNumber(),
         listingTitle: account.account.listingTitle,
         externalId: account.account.externalId,
@@ -125,7 +125,7 @@ export function useSolanaListing() {
     const [configPda] = deriveConfigPda(PROGRAM_ID);
     
     // Fetch config to get next listing ID
-    const config = await program.account.config.fetch(configPda);
+    const config = await (program.account as any).config.fetch(configPda);
     const nextListingId = config.lastListingId.toNumber() + 1;
     
     const [listingPda] = deriveListingPda(nextListingId, PROGRAM_ID);
@@ -144,7 +144,7 @@ export function useSolanaListing() {
     return { tx, listingId: nextListingId };
   }, [program, publicKey]);
 
-  const purchaseListing = useCallback(async (listingId: number, price: number) => {
+  const purchaseListing = useCallback(async (listingId: number) => {
     if (!program || !publicKey) {
       throw new Error('Wallet not connected');
     }
@@ -173,7 +173,7 @@ export function useSolanaListing() {
     const [listingPda] = deriveListingPda(listingId, PROGRAM_ID);
     
     // Fetch listing to get buyer
-    const listing = await program.account.listing.fetch(listingPda);
+    const listing = await (program.account as any).listing.fetch(listingPda);
     const [relationshipPda] = deriveRelationshipPda(listing.seller, listing.buyer!, PROGRAM_ID);
 
     const tx = await program.methods
@@ -217,7 +217,7 @@ export function useSolanaListing() {
 
     try {
       const [listingPda] = deriveListingPda(listingId, PROGRAM_ID);
-      const account = await program.account.listing.fetch(listingPda);
+      const account = await (program.account as any).listing.fetch(listingPda);
 
       const listing: SolanaListing = {
         listingId: account.listingId.toNumber(),

@@ -7,7 +7,6 @@ import {
   ModalBody,
   VStack,
   Text,
-  useToast,
   Stat,
   StatLabel,
   StatNumber,
@@ -28,9 +27,7 @@ export default function ViewProfileModal({
   isOpen,
   onClose,
   walletAddress,
-  onProfileDeleted,
 }: ViewProfileModalProps) {
-  const toast = useToast();
   const { profile, fetchProfile } = useSolanaProfile();
 
   // Fetch profile when modal opens

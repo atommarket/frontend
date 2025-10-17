@@ -6,7 +6,6 @@ import {
   Heading,
   VStack,
   useDisclosure,
-  Text,
   Input,
   InputGroup,
   InputLeftElement,
@@ -25,7 +24,7 @@ import {
   SolflareWalletAdapter,
   TorusWalletAdapter,
 } from '@solana/wallet-adapter-wallets';
-import { clusterApiUrl, PublicKey } from '@solana/web3.js';
+import { PublicKey } from '@solana/web3.js';
 
 import CreateListingModal from './components/CreateListingModal';
 import CreateProfileModal from './components/CreateProfileModal';

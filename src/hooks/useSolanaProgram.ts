@@ -1,8 +1,7 @@
 import { useMemo } from 'react';
 import { useConnection, useAnchorWallet } from '@solana/wallet-adapter-react';
 import { Program, AnchorProvider } from '@coral-xyz/anchor';
-import { PublicKey } from '@solana/web3.js';
-import { IDL, SolanaMarketplace } from '../config/idl';
+import { IDL } from '../config/idl';
 import { PROGRAM_ID } from '../config/solana';
 
 export function useSolanaProgram() {
@@ -18,7 +17,7 @@ export function useSolanaProgram() {
       { commitment: 'confirmed' }
     );
 
-    return new Program<SolanaMarketplace>(
+    return new Program(
       IDL as any,
       PROGRAM_ID,
       provider
