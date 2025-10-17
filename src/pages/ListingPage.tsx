@@ -56,10 +56,11 @@ export default function ListingPage({ walletAddress }: ListingPageProps) {
           setListing(listingData);
           console.log('Processed listing:', listingData);
 
-          if (listingData.externalId) {
-            const imageResponse = await fetch(listingData.externalId);
+          const listing = listingData as SolanaListing;
+          if (listing?.externalId) {
+            const imageResponse = await fetch(listing.externalId);
             const metadata: ImageMetadata = await imageResponse.json();
-            setImages(metadata.images.map(img => img.url));
+            setImages(metadata.images.map((img: any) => img.url));
           }
         } else {
           throw new Error('Listing not found');
