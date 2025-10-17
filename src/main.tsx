@@ -3,6 +3,15 @@ import ReactDOM from 'react-dom/client'
 import { ChakraProvider, ColorModeScript } from '@chakra-ui/react'
 import App from './App'
 import theme from './theme'
+import { Buffer } from 'buffer'
+import process from 'process'
+
+// Polyfill Buffer and process for browser
+window.Buffer = Buffer
+window.process = process
+if (!window.global) {
+  window.global = window
+}
 
 // Error boundary for debugging
 class ErrorBoundary extends React.Component<
