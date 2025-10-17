@@ -1,3 +1,11 @@
+import { Buffer } from 'buffer'
+import process from 'process'
+
+// Set up globals FIRST before any other imports
+;(window as any).Buffer = Buffer
+;(window as any).process = process
+;(window as any).global = window
+
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { ChakraProvider, ColorModeScript } from '@chakra-ui/react'
