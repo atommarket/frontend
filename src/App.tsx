@@ -39,6 +39,10 @@ import logo from './assets/logo.png';
 // Import wallet adapter CSS
 import '@solana/wallet-adapter-react-ui/styles.css';
 
+// Debug logging
+console.log('App.tsx loading...');
+console.log('RPC_ENDPOINT:', RPC_ENDPOINT);
+
 function HomePage({ 
   walletAddress, 
 }: { 

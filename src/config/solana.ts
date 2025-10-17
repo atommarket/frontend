@@ -8,7 +8,7 @@ export const NETWORK = 'devnet';
 export const RPC_ENDPOINT = 'https://api.devnet.solana.com';
 
 // Admin wallet from deployment
-export const ADMIN_PUBKEY = new PublicKey('G9MLBNSHjvmZbnEeC3737KhSMdXdBFztn8GNV5UUeR');
+export const ADMIN_PUBKEY = new PublicKey('G9MLBNSHjvjmZbnEeC3737KhSMddXdBFztn8GNV5uUeR');
 
 // PDA derivation helpers
 export function deriveConfigPda(programId: PublicKey): [PublicKey, number] {
