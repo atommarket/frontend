@@ -13,18 +13,11 @@ import {
   IconButton,
   Badge,
   Heading,
-  AlertDialog,
-  AlertDialogBody,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogContent,
-  AlertDialogOverlay,
   useColorModeValue,
 } from '@chakra-ui/react';
 import { ArrowBackIcon, ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
-import { SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate';
-import { Listing } from '../hooks/useListing';
-import { useListing } from '../hooks/useListing';
+import { PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { SolanaListing, useSolanaListing } from '../hooks/useSolanaListing';
 import { useIPFS } from '../hooks/useIPFS';
 
 interface ImageMetadata {
@@ -35,52 +28,41 @@ interface ImageMetadata {
 }
 
 interface ListingPageProps {
-  client: SigningCosmWasmClient | null;
-  contractAddress: string;
   walletAddress: string;
 }
 
-export default function ListingPage({ client, contractAddress, walletAddress }: ListingPageProps) {
+export default function ListingPage({ walletAddress }: ListingPageProps) {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const toast = useToast();
-  const [listing, setListing] = useState<Listing | null>(null);
+  const [listing, setListing] = useState<SolanaListing | null>(null);
   const [images, setImages] = useState<string[]>([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const cancelRef = React.useRef<HTMLButtonElement>(null);
-  const { deleteListing } = useListing(client, contractAddress);
+  const { fetchListingById, purchaseListing, markAsShipped, markAsReceived } = useSolanaListing();
   const { unpinFile } = useIPFS();
   const bgColor = useColorModeValue('white', 'gray.700');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
 
   useEffect(() => {
     const fetchListing = async () => {
-      if (!client || !id) return;
+      if (!id) return;
       try {
-        const response = await client.queryContractSmart(contractAddress, {
-          listing: { listing_id: parseInt(id) }
-        });
-        console.log('Listing response:', response);
+        const listingData = await fetchListingById(parseInt(id));
+        console.log('Listing response:', listingData);
         console.log('Wallet address:', walletAddress);
-        console.log('Is seller?', walletAddress === response.listing.seller);
         
-        if (response && response.listing && typeof response.listing === 'object') {
-          const processedListing = {
-            ...response.listing,
-            tags: response.listing.tags || [],
-          };
-          setListing(processedListing);
-          console.log('Processed listing:', processedListing);
+        if (listingData) {
+          setListing(listingData);
+          console.log('Processed listing:', listingData);
 
-          if (processedListing.external_id) {
-            const imageResponse = await fetch(processedListing.external_id);
+          if (listingData.externalId) {
+            const imageResponse = await fetch(listingData.externalId);
             const metadata: ImageMetadata = await imageResponse.json();
             setImages(metadata.images.map(img => img.url));
           }
         } else {
-          throw new Error('Invalid listing response format');
+          throw new Error('Listing not found');
         }
       } catch (error) {
         console.error('Error fetching listing:', error);
@@ -96,24 +78,13 @@ export default function ListingPage({ client, contractAddress, walletAddress }: 
     };
 
     fetchListing();
-  }, [client, contractAddress, id, toast, walletAddress]);
+  }, [id, toast, walletAddress, fetchListingById]);
 
   const handlePurchase = async () => {
-    if (!client || !walletAddress || !listing) return;
+    if (!walletAddress || !listing) return;
     try {
-      console.log('Attempting purchase with price:', listing.price, 'ujuno');
-      const funds = [{ amount: listing.price.toString(), denom: 'ujuno' }];
-      await client.execute(
-        walletAddress,
-        contractAddress,
-        { purchase: { listing_id: listing.listing_id } },
-        {
-          amount: [{ amount: "37500", denom: "ujuno" }],
-          gas: "500000"
-        },
-        "",
-        funds
-      );
+      console.log('Attempting purchase with price:', listing.price, 'lamports');
+      await purchaseListing(listing.listingId, listing.price);
       toast({ title: 'Purchase successful', status: 'success' });
       // Refresh listing data
       navigate(0);
@@ -129,17 +100,9 @@ export default function ListingPage({ client, contractAddress, walletAddress }: 
   };
 
   const handleMarkShipped = async () => {
-    if (!client || !walletAddress || !listing) return;
+    if (!walletAddress || !listing) return;
     try {
-      await client.execute(
-        walletAddress,
-        contractAddress,
-        { sign_shipped: { listing_id: listing.listing_id } },
-        {
-          amount: [],
-          gas: "500000",
-        }
-      );
+      await markAsShipped(listing.listingId);
       toast({ title: 'Marked as shipped', status: 'success' });
       navigate(0);
     } catch (error) {
@@ -148,29 +111,20 @@ export default function ListingPage({ client, contractAddress, walletAddress }: 
   };
 
   const handleMarkReceived = async () => {
-    if (!client || !walletAddress || !listing) return;
+    if (!walletAddress || !listing) return;
     try {
-      await client.execute(
-        walletAddress,
-        contractAddress,
-        { sign_received: { listing_id: listing.listing_id } },
-        {
-          amount: [],
-          gas: "500000",
-        }
-      );
+      await markAsReceived(listing.listingId, new PublicKey(listing.seller));
 
       // After marking as received, unpin the IPFS files
-      if (listing.external_id) {
+      if (listing.externalId) {
         try {
-          const ipfsUrl = new URL(listing.external_id);
+          const ipfsUrl = new URL(listing.externalId);
           const cid = ipfsUrl.pathname.split('/').pop();
           if (cid) {
             await unpinFile(cid);
           }
         } catch (error) {
           console.error('Error unpinning file:', error);
-          // Don't throw here as the main operation succeeded
         }
       }
 
@@ -179,80 +133,6 @@ export default function ListingPage({ client, contractAddress, walletAddress }: 
     } catch (error) {
       toast({ title: 'Failed to mark as received', status: 'error' });
     }
-  };
-
-  const handleRequestArbitration = async () => {
-    if (!client || !walletAddress || !listing) return;
-    try {
-      await client.execute(
-        walletAddress,
-        contractAddress,
-        { request_arbitration: { listing_id: listing.listing_id } },
-        {
-          amount: [],
-          gas: "500000",
-        }
-      );
-      toast({ title: 'Arbitration requested', status: 'success' });
-      navigate(0);
-    } catch (error) {
-      toast({ title: 'Failed to request arbitration', status: 'error' });
-    }
-  };
-
-  const handleCancelSale = async () => {
-    if (!client || !walletAddress || !listing) return;
-    try {
-      await client.execute(
-        walletAddress,
-        contractAddress,
-        { seller_cancel_sale: { listing_id: listing.listing_id } },
-        {
-          amount: [],
-          gas: "500000",
-        }
-      );
-      toast({ title: 'Sale cancelled successfully', status: 'success' });
-      navigate(0);
-    } catch (error) {
-      toast({ title: 'Failed to cancel sale', status: 'error' });
-    }
-  };
-
-  const handleCancelPurchase = async () => {
-    if (!client || !walletAddress || !listing) return;
-    try {
-      await client.execute(
-        walletAddress,
-        contractAddress,
-        { cancel_purchase: { listing_id: listing.listing_id } },
-        {
-          amount: [],
-          gas: "500000",
-        }
-      );
-      toast({ title: 'Purchase cancelled successfully', status: 'success' });
-      navigate(0);
-    } catch (error) {
-      toast({ title: 'Failed to cancel purchase', status: 'error' });
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!client || !walletAddress || !listing) return;
-    try {
-      await deleteListing(listing.listing_id, walletAddress);
-      toast({ title: 'Listing deleted successfully', status: 'success' });
-      navigate('/');
-    } catch (error) {
-      console.error('Error deleting listing:', error);
-      toast({ 
-        title: 'Failed to delete listing', 
-        description: error instanceof Error ? error.message : 'Unknown error occurred',
-        status: 'error' 
-      });
-    }
-    setIsDeleteDialogOpen(false);
   };
 
   const nextImage = () => {
@@ -292,7 +172,7 @@ export default function ListingPage({ client, contractAddress, walletAddress }: 
     isBought: listing?.bought,
     isShipped: listing?.shipped,
     isReceived: listing?.received,
-    hasArbitration: listing?.arbitration_requested
+    hasArbitration: listing?.arbitrationRequested
   });
 
   return (
@@ -309,7 +189,7 @@ export default function ListingPage({ client, contractAddress, walletAddress }: 
               <>
                 <Image
                   src={images[currentImageIndex]}
-                  alt={`${listing.listing_title} - Image ${currentImageIndex + 1}`}
+                  alt={`${listing.listingTitle} - Image ${currentImageIndex + 1}`}
                   borderRadius="lg"
                   w="full"
                   maxH="600px"
@@ -390,27 +270,27 @@ export default function ListingPage({ client, contractAddress, walletAddress }: 
           borderColor={borderColor}
         >
           <VStack align="stretch" spacing={4}>
-            <Heading as="h1" size="xl">{listing.listing_title}</Heading>
+            <Heading as="h1" size="xl">{listing.listingTitle}</Heading>
             
             <HStack>
-              <Badge colorScheme="blue">Price: {listing.price / 1_000_000} JUNO</Badge>
+              <Badge colorScheme="blue">Price: {(listing.price / LAMPORTS_PER_SOL).toFixed(4)} SOL</Badge>
               {listing.bought && <Badge colorScheme="green">Sold</Badge>}
               {listing.shipped && <Badge colorScheme="orange">Shipped</Badge>}
               {listing.received && <Badge colorScheme="green">Received</Badge>}
-              {listing.arbitration_requested && <Badge colorScheme="red">Arbitration Requested</Badge>}
+              {listing.arbitrationRequested && <Badge colorScheme="red">Arbitration Requested</Badge>}
             </HStack>
 
             <Text fontSize="lg">{listing.text}</Text>
             
             <Box>
               <Text fontWeight="bold">Seller:</Text>
-              <Text>{listing.seller}</Text>
+              <Text fontSize="sm">{listing.seller}</Text>
             </Box>
 
             {listing.buyer && (
               <Box>
                 <Text fontWeight="bold">Buyer:</Text>
-                <Text>{listing.buyer}</Text>
+                <Text fontSize="sm">{listing.buyer}</Text>
               </Box>
             )}
 
@@ -438,7 +318,7 @@ export default function ListingPage({ client, contractAddress, walletAddress }: 
                   onClick={handlePurchase}
                   mb={4}
                 >
-                  Purchase for {listing.price / 1_000_000} JUNO
+                  Purchase for {(listing.price / LAMPORTS_PER_SOL).toFixed(4)} SOL
                 </Button>
               )}
               
@@ -455,28 +335,7 @@ export default function ListingPage({ client, contractAddress, walletAddress }: 
                       Mark as Shipped
                     </Button>
                   )}
-                  <Button 
-                    colorScheme="red" 
-                    size="lg" 
-                    w="full" 
-                    onClick={handleCancelSale}
-                    mb={4}
-                  >
-                    Cancel Sale
-                  </Button>
                 </>
-              )}
-              
-              {listing.bought && listing.buyer === walletAddress && !listing.shipped && (
-                <Button 
-                  colorScheme="red" 
-                  size="lg" 
-                  w="full" 
-                  onClick={handleCancelPurchase}
-                  mb={4}
-                >
-                  Cancel Purchase
-                </Button>
               )}
               
               {listing.bought && listing.shipped && listing.buyer === walletAddress && !listing.received && (
@@ -490,64 +349,10 @@ export default function ListingPage({ client, contractAddress, walletAddress }: 
                   Mark as Received
                 </Button>
               )}
-              
-              {listing.bought && listing.shipped && !listing.arbitration_requested &&
-               (listing.buyer === walletAddress || listing.seller === walletAddress) && (
-                <Button 
-                  colorScheme="red" 
-                  size="lg" 
-                  w="full" 
-                  onClick={handleRequestArbitration}
-                  mb={4}
-                >
-                  Request Arbitration
-                </Button>
-              )}
-
-              {/* Delete button for sellers */}
-              {!listing.bought && listing.seller === walletAddress && (
-                <Button 
-                  colorScheme="red" 
-                  size="lg" 
-                  w="full" 
-                  onClick={() => setIsDeleteDialogOpen(true)}
-                  mt={4}
-                >
-                  Delete Listing
-                </Button>
-              )}
             </Box>
           </VStack>
         </Box>
       </Box>
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog
-        isOpen={isDeleteDialogOpen}
-        leastDestructiveRef={cancelRef}
-        onClose={() => setIsDeleteDialogOpen(false)}
-      >
-        <AlertDialogOverlay>
-          <AlertDialogContent>
-            <AlertDialogHeader fontSize="lg" fontWeight="bold">
-              Delete Listing
-            </AlertDialogHeader>
-
-            <AlertDialogBody>
-              Are you sure you want to delete this listing? This action cannot be undone.
-            </AlertDialogBody>
-
-            <AlertDialogFooter>
-              <Button ref={cancelRef} onClick={() => setIsDeleteDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button colorScheme="red" onClick={handleDelete} ml={3}>
-                Delete
-              </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialogOverlay>
-      </AlertDialog>
     </Container>
   );
-} 
+}

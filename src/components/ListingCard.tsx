@@ -1,9 +1,8 @@
 import { Box, Button, Text, VStack, HStack, useToast, Image, Spinner, Badge, useColorModeValue } from '@chakra-ui/react';
-import { SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate';
-import { Listing } from '../hooks/useListing';
-import { coin } from '@cosmjs/stargate';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { SolanaListing, useSolanaListing } from '../hooks/useSolanaListing';
 import { useIPFS } from '../hooks/useIPFS';
 
 interface ImageMetadata {
@@ -14,18 +13,14 @@ interface ImageMetadata {
 }
 
 interface ListingCardProps {
-  listing: Listing;
+  listing: SolanaListing;
   walletAddress: string;
-  client: SigningCosmWasmClient | null;
-  contractAddress: string;
   onSuccess: () => void;
 }
 
 export default function ListingCard({
   listing,
   walletAddress,
-  client,
-  contractAddress,
   onSuccess,
 }: ListingCardProps) {
   const navigate = useNavigate();
@@ -33,19 +28,20 @@ export default function ListingCard({
   const [images, setImages] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const { purchaseListing, markAsShipped, markAsReceived } = useSolanaListing();
   const { unpinFile } = useIPFS();
   const bgColor = useColorModeValue('white', 'gray.700');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
 
   useEffect(() => {
     const fetchImages = async () => {
-      if (!listing.external_id) {
+      if (!listing.externalId) {
         setIsLoading(false);
         return;
       }
 
       try {
-        const response = await fetch(listing.external_id);
+        const response = await fetch(listing.externalId);
         const metadata: ImageMetadata = await response.json();
         setImages(metadata.images.map(img => img.url));
       } catch (error) {
@@ -61,39 +57,28 @@ export default function ListingCard({
     };
 
     fetchImages();
-  }, [listing.external_id, toast]);
+  }, [listing.externalId, toast]);
 
   const handlePurchase = async () => {
-    if (!client || !walletAddress) return;
+    if (!walletAddress) return;
     try {
-      await client.execute(
-        walletAddress,
-        contractAddress,
-        { purchase: { listing_id: listing.listing_id } },
-        {
-          amount: [coin(listing.price, 'ujuno')],
-          gas: "500000",
-        }
-      );
+      await purchaseListing(listing.listingId, listing.price);
       onSuccess();
       toast({ title: 'Purchase successful', status: 'success' });
     } catch (error) {
-      toast({ title: 'Purchase failed', status: 'error' });
+      console.error('Purchase error:', error);
+      toast({ 
+        title: 'Purchase failed', 
+        description: error instanceof Error ? error.message : 'Unknown error',
+        status: 'error' 
+      });
     }
   };
 
   const handleMarkShipped = async () => {
-    if (!client || !walletAddress) return;
+    if (!walletAddress) return;
     try {
-      await client.execute(
-        walletAddress,
-        contractAddress,
-        { sign_shipped: { listing_id: listing.listing_id } },
-        {
-          amount: [],
-          gas: "500000",
-        }
-      );
+      await markAsShipped(listing.listingId);
       onSuccess();
       toast({ title: 'Marked as shipped', status: 'success' });
     } catch (error) {
@@ -102,29 +87,20 @@ export default function ListingCard({
   };
 
   const handleMarkReceived = async () => {
-    if (!client || !walletAddress) return;
+    if (!walletAddress) return;
     try {
-      await client.execute(
-        walletAddress,
-        contractAddress,
-        { sign_received: { listing_id: listing.listing_id } },
-        {
-          amount: [],
-          gas: "500000",
-        }
-      );
+      await markAsReceived(listing.listingId, new PublicKey(listing.seller));
 
       // After marking as received, unpin the IPFS files
-      if (listing.external_id) {
+      if (listing.externalId) {
         try {
-          const ipfsUrl = new URL(listing.external_id);
+          const ipfsUrl = new URL(listing.externalId);
           const cid = ipfsUrl.pathname.split('/').pop();
           if (cid) {
             await unpinFile(cid);
           }
         } catch (error) {
           console.error('Error unpinning file:', error);
-          // Don't throw here as the main operation succeeded
         }
       }
 
@@ -132,63 +108,6 @@ export default function ListingCard({
       toast({ title: 'Marked as received', status: 'success' });
     } catch (error) {
       toast({ title: 'Failed to mark as received', status: 'error' });
-    }
-  };
-
-  const handleRequestArbitration = async () => {
-    if (!client || !walletAddress) return;
-    try {
-      await client.execute(
-        walletAddress,
-        contractAddress,
-        { request_arbitration: { listing_id: listing.listing_id } },
-        {
-          amount: [],
-          gas: "500000",
-        }
-      );
-      onSuccess();
-      toast({ title: 'Arbitration requested', status: 'success' });
-    } catch (error) {
-      toast({ title: 'Failed to request arbitration', status: 'error' });
-    }
-  };
-
-  const handleCancelSale = async () => {
-    if (!client || !walletAddress) return;
-    try {
-      await client.execute(
-        walletAddress,
-        contractAddress,
-        { seller_cancel_sale: { listing_id: listing.listing_id } },
-        {
-          amount: [],
-          gas: "500000",
-        }
-      );
-      onSuccess();
-      toast({ title: 'Sale cancelled successfully', status: 'success' });
-    } catch (error) {
-      toast({ title: 'Failed to cancel sale', status: 'error' });
-    }
-  };
-
-  const handleCancelPurchase = async () => {
-    if (!client || !walletAddress) return;
-    try {
-      await client.execute(
-        walletAddress,
-        contractAddress,
-        { cancel_purchase: { listing_id: listing.listing_id } },
-        {
-          amount: [],
-          gas: "500000",
-        }
-      );
-      onSuccess();
-      toast({ title: 'Purchase cancelled successfully', status: 'success' });
-    } catch (error) {
-      toast({ title: 'Failed to cancel purchase', status: 'error' });
     }
   };
 
@@ -201,7 +120,7 @@ export default function ListingCard({
   };
 
   const handleClick = () => {
-    navigate(`/listing/${listing.listing_id}`);
+    navigate(`/listing/${listing.listingId}`);
   };
 
   return (
@@ -218,7 +137,7 @@ export default function ListingCard({
       borderColor={borderColor}
     >
       <VStack align="start" spacing={2}>
-        <Text fontSize="xl" fontWeight="bold">{listing.listing_title}</Text>
+        <Text fontSize="xl" fontWeight="bold">{listing.listingTitle}</Text>
         
         {isLoading ? (
           <Box w="full" h="200px" display="flex" alignItems="center" justifyContent="center">
@@ -228,7 +147,7 @@ export default function ListingCard({
           <Box position="relative" w="full">
             <Image
               src={images[currentImageIndex]}
-              alt={`${listing.listing_title} - Image ${currentImageIndex + 1}`}
+              alt={`${listing.listingTitle} - Image ${currentImageIndex + 1}`}
               borderRadius="md"
               maxH="200px"
               objectFit="cover"
@@ -255,11 +174,11 @@ export default function ListingCard({
 
         <Text>{listing.text}</Text>
         <HStack>
-          <Text>Price: {listing.price / 1_000_000} JUNO</Text>
+          <Text>Price: {(listing.price / LAMPORTS_PER_SOL).toFixed(4)} SOL</Text>
           {listing.bought && <Badge colorScheme="green">SOLD</Badge>}
         </HStack>
-        <Text>Seller: {listing.seller}</Text>
-        <Text>Tags: {(listing.tags || []).join(', ')}</Text>
+        <Text fontSize="sm">Seller: {listing.seller.slice(0, 8)}...{listing.seller.slice(-4)}</Text>
+        <Text fontSize="sm">Tags: {(listing.tags || []).join(', ')}</Text>
 
         <HStack spacing={4} onClick={(e) => e.stopPropagation()}>
           {!listing.bought && walletAddress !== listing.seller && (
@@ -275,32 +194,16 @@ export default function ListingCard({
                   Mark Shipped
                 </Button>
               )}
-              <Button colorScheme="red" onClick={handleCancelSale}>
-                Cancel Sale
-              </Button>
             </>
           )}
           
-          {listing.bought && listing.buyer === walletAddress && !listing.shipped && (
-            <Button colorScheme="red" onClick={handleCancelPurchase}>
-              Cancel Purchase
-            </Button>
-          )}
-          
-          {listing.bought && listing.shipped && listing.buyer === walletAddress && (
+          {listing.bought && listing.shipped && listing.buyer === walletAddress && !listing.received && (
             <Button colorScheme="green" onClick={handleMarkReceived}>
               Mark Received
-            </Button>
-          )}
-          
-          {listing.bought && listing.shipped && 
-           (listing.buyer === walletAddress || listing.seller === walletAddress) && (
-            <Button colorScheme="red" onClick={handleRequestArbitration}>
-              Request Arbitration
             </Button>
           )}
         </HStack>
       </VStack>
     </Box>
   );
-} 
+}

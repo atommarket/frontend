@@ -1,21 +1,16 @@
 import { SimpleGrid, Box, Button, HStack, Text, Select, Center } from '@chakra-ui/react';
-import { SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate';
 import ListingCard from './ListingCard';
-import { Listing } from '../hooks/useListing';
+import { SolanaListing } from '../hooks/useSolanaListing';
 import { useState } from 'react';
 
 interface ListingGridProps {
-  listings: Listing[];
-  client: SigningCosmWasmClient | null;
-  contractAddress: string;
+  listings: SolanaListing[];
   walletAddress: string;
   onRefresh: () => void;
 }
 
 export default function ListingGrid({
   listings,
-  client,
-  contractAddress,
   walletAddress,
   onRefresh,
 }: ListingGridProps) {
@@ -37,7 +32,7 @@ export default function ListingGrid({
         return b.price - a.price;
       case 'newest':
       default:
-        return b.listing_id - a.listing_id;
+        return b.listingId - a.listingId;
     }
   });
 
@@ -85,10 +80,8 @@ export default function ListingGrid({
       <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6} mb={6}>
         {displayedListings.map((listing) => (
           <ListingCard
-            key={listing.listing_id}
+            key={listing.listingId}
             listing={listing}
-            client={client}
-            contractAddress={contractAddress}
             walletAddress={walletAddress}
             onSuccess={onRefresh}
           />
@@ -126,4 +119,4 @@ export default function ListingGrid({
       )}
     </Box>
   );
-} 
+}

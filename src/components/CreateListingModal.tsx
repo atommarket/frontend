@@ -15,14 +15,12 @@ import {
   Text,
 } from '@chakra-ui/react';
 import { useState } from 'react';
-import { SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate';
 import { AddIcon } from '@chakra-ui/icons';
+import { useSolanaListing } from '../hooks/useSolanaListing';
 
 interface CreateListingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  client: SigningCosmWasmClient | null;
-  contractAddress: string;
   walletAddress: string;
   onSuccess: () => void;
 }
@@ -108,12 +106,11 @@ const uploadToIPFS = async (files: File[]): Promise<string> => {
 export default function CreateListingModal({
   isOpen,
   onClose,
-  client,
-  contractAddress,
   walletAddress,
   onSuccess,
 }: CreateListingModalProps) {
   const toast = useToast();
+  const { createListing } = useSolanaListing();
   const [formData, setFormData] = useState<FormData>({
     title: '',
     text: '',
@@ -147,7 +144,7 @@ export default function CreateListingModal({
   };
 
   const handleSubmit = async () => {
-    if (!client || !walletAddress) {
+    if (!walletAddress) {
       toast({ 
         title: 'Error',
         description: 'Wallet not connected',
@@ -173,42 +170,32 @@ export default function CreateListingModal({
         }
       }
 
-      // Prepare the message
+      // Prepare the data
       const price = parseFloat(formData.price);
       if (isNaN(price)) {
         throw new Error('Invalid price value');
       }
 
-      const msg = {
-        create_listing: {
-          listing_title: formData.title,
-          external_id: ipfsUrl,
-          text: formData.text,
-          tags: formData.tags.split(',').map(t => t.trim()).filter(t => t),
-          contact: formData.contact,
-          price: Math.floor(price * 1_000_000), // Convert to ujuno
-        }
-      };
+      const tags = formData.tags.split(',').map(t => t.trim()).filter(t => t);
 
-      console.log('Executing contract with message:', JSON.stringify(msg, null, 2));
-
-      const result = await client.execute(
-        walletAddress,
-        contractAddress,
-        msg,
-        {
-          amount: [],
-          gas: "500000",
-        }
+      console.log('Creating listing on Solana...');
+      
+      const { tx } = await createListing(
+        formData.title,
+        ipfsUrl,
+        formData.text,
+        tags,
+        formData.contact,
+        price
       );
 
-      console.log('Contract execution result:', result);
+      console.log('Listing created, transaction:', tx);
       
       onSuccess();
       onClose();
       toast({ 
         title: 'Listing created successfully',
-        description: 'Your listing has been created and will appear shortly',
+        description: 'Your listing has been created on Solana',
         status: 'success' 
       });
     } catch (error: any) {
@@ -266,9 +253,10 @@ export default function CreateListingModal({
             </FormControl>
             
             <FormControl>
-              <FormLabel>Price (JUNO)</FormLabel>
+              <FormLabel>Price (SOL)</FormLabel>
               <Input
                 type="number"
+                step="0.01"
                 value={formData.price}
                 onChange={(e) => setFormData({ ...formData, price: e.target.value })}
               />
@@ -313,4 +301,4 @@ export default function CreateListingModal({
       </ModalContent>
     </Modal>
   );
-} 
+}

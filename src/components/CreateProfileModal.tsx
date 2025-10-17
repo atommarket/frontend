@@ -13,13 +13,11 @@ import {
   useToast,
 } from '@chakra-ui/react';
 import { useState } from 'react';
-import { SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate';
+import { useSolanaProfile } from '../hooks/useSolanaProfile';
 
 interface CreateProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
-  client: SigningCosmWasmClient | null;
-  contractAddress: string;
   walletAddress: string;
   onSuccess: () => void;
 }
@@ -27,17 +25,16 @@ interface CreateProfileModalProps {
 export default function CreateProfileModal({
   isOpen,
   onClose,
-  client,
-  contractAddress,
   walletAddress,
   onSuccess,
 }: CreateProfileModalProps) {
   const toast = useToast();
+  const { createProfile } = useSolanaProfile();
   const [profileName, setProfileName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
-    if (!client || !walletAddress) {
+    if (!walletAddress) {
       toast({ 
         title: 'Error',
         description: 'Wallet not connected',
@@ -57,20 +54,13 @@ export default function CreateProfileModal({
 
     setIsSubmitting(true);
     try {
-      await client.execute(
-        walletAddress,
-        contractAddress,
-        { create_profile: { profile_name: profileName.trim() } },
-        {
-          amount: [],
-          gas: "500000",
-        }
-      );
+      await createProfile(profileName.trim());
       
       onSuccess();
       onClose();
       toast({ 
         title: 'Profile created successfully',
+        description: 'Your profile has been created on Solana',
         status: 'success' 
       });
     } catch (error) {
@@ -117,4 +107,4 @@ export default function CreateProfileModal({
       </ModalContent>
     </Modal>
   );
-} 
+}

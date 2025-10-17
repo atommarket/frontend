@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Box,
   Button,
@@ -15,83 +15,43 @@ import {
   useColorMode,
   IconButton,
 } from '@chakra-ui/react';
-import { SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate';
-import { Window as KeplrWindow } from '@keplr-wallet/types';
 import { SearchIcon, MoonIcon, SunIcon, AddIcon } from '@chakra-ui/icons';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { ConnectionProvider, WalletProvider, useWallet } from '@solana/wallet-adapter-react';
+import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
+import { WalletModalProvider, WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { 
+  PhantomWalletAdapter,
+  SolflareWalletAdapter,
+  TorusWalletAdapter,
+} from '@solana/wallet-adapter-wallets';
+import { clusterApiUrl, PublicKey } from '@solana/web3.js';
+
 import CreateListingModal from './components/CreateListingModal';
 import CreateProfileModal from './components/CreateProfileModal';
 import ViewProfileModal from './components/ViewProfileModal';
 import ListingGrid from './components/ListingGrid';
 import ListingPage from './pages/ListingPage';
-import { useListing } from './hooks/useListing';
+import { useSolanaListing } from './hooks/useSolanaListing';
+import { useSolanaProfile } from './hooks/useSolanaProfile';
+import { RPC_ENDPOINT } from './config/solana';
 import logo from './assets/logo.png';
 
-declare global {
-  interface Window extends KeplrWindow {}
-}
-
-const CONTRACT_ADDRESS = 'juno1fucsaa4mukx86z5sfxm3k3445eh8c4vcpejzu93457wufh4s6zms4qz6ra';
-
-// Chain configuration for Juno
-const chainConfig = {
-  chainId: 'juno-1',
-  chainName: 'Juno',
-  rpc: 'https://rpc-juno.itastakers.com',
-  rest: 'https://lcd-juno.itastakers.com',
-  bip44: {
-    coinType: 118,
-  },
-  bech32Config: {
-    bech32PrefixAccAddr: 'juno',
-    bech32PrefixAccPub: 'junopub',
-    bech32PrefixValAddr: 'junovaloper',
-    bech32PrefixValPub: 'junovaloperpub',
-    bech32PrefixConsAddr: 'junovalcons',
-    bech32PrefixConsPub: 'junovalconspub',
-  },
-  currencies: [
-    {
-      coinDenom: 'JUNO',
-      coinMinimalDenom: 'ujuno',
-      coinDecimals: 6,
-    },
-  ],
-  feeCurrencies: [
-    {
-      coinDenom: 'JUNO',
-      coinMinimalDenom: 'ujuno',
-      coinDecimals: 6,
-    },
-  ],
-  stakeCurrency: {
-    coinDenom: 'JUNO',
-    coinMinimalDenom: 'ujuno',
-    coinDecimals: 6,
-  },
-  gasPriceStep: {
-    low: 0.01,
-    average: 0.025,
-    high: 0.04,
-  },
-};
+// Import wallet adapter CSS
+import '@solana/wallet-adapter-react-ui/styles.css';
 
 function HomePage({ 
-  client, 
   walletAddress, 
 }: { 
-  client: SigningCosmWasmClient | null;
   walletAddress: string;
 }) {
   const [searchTerm, setSearchTerm] = useState('');
-  const { listings, fetchListings, searchListingsByTitle } = useListing(client, CONTRACT_ADDRESS);
+  const { listings, fetchListings, searchListingsByTitle } = useSolanaListing();
 
   // Initial fetch of listings
   useEffect(() => {
-    if (client) {
-      fetchListings();
-    }
-  }, [client, fetchListings]);
+    fetchListings();
+  }, [fetchListings]);
 
   // Handle search with debounce
   useEffect(() => {
@@ -119,8 +79,6 @@ function HomePage({
 
       <ListingGrid
         listings={listings}
-        client={client}
-        contractAddress={CONTRACT_ADDRESS}
         walletAddress={walletAddress}
         onRefresh={fetchListings}
       />
@@ -128,55 +86,30 @@ function HomePage({
   );
 }
 
-export default function App() {
-  const [client, setClient] = useState<SigningCosmWasmClient | null>(null);
+function AppContent() {
   const [walletAddress, setWalletAddress] = useState<string>('');
   const [hasProfile, setHasProfile] = useState<boolean>(false);
   const { isOpen: isListingModalOpen, onOpen: onListingModalOpen, onClose: onListingModalClose } = useDisclosure();
   const { isOpen: isProfileModalOpen, onOpen: onProfileModalOpen, onClose: onProfileModalClose } = useDisclosure();
   const { isOpen: isViewProfileOpen, onOpen: onViewProfileOpen, onClose: onViewProfileClose } = useDisclosure();
   const { colorMode, toggleColorMode } = useColorMode();
+  const { fetchProfile } = useSolanaProfile();
+  const { publicKey } = useWallet();
 
-  const connectWallet = async () => {
-    if (!window.keplr) {
-      alert('Please install Keplr extension');
-      return;
+  // Track wallet connection
+  useEffect(() => {
+    if (publicKey) {
+      setWalletAddress(publicKey.toString());
+    } else {
+      setWalletAddress('');
+      setHasProfile(false);
     }
+  }, [publicKey]);
 
+  const checkProfile = async (pubkey: PublicKey) => {
     try {
-      // Suggest the chain to Keplr
-      await window.keplr.experimentalSuggestChain(chainConfig);
-      
-      // Enable the chain
-      await window.keplr.enable(chainConfig.chainId);
-      
-      // Get the offline signer
-      const offlineSigner = window.keplr.getOfflineSigner(chainConfig.chainId);
-      
-      // Create the client
-      const client = await SigningCosmWasmClient.connectWithSigner(
-        chainConfig.rpc,
-        offlineSigner
-      );
-      
-      // Get the user's address
-      const [{ address }] = await offlineSigner.getAccounts();
-      
-      setClient(client);
-      setWalletAddress(address);
-    } catch (error) {
-      console.error('Error connecting wallet:', error);
-      alert('Failed to connect wallet: ' + (error as Error).message);
-    }
-  };
-
-  const checkProfile = async () => {
-    if (!client || !walletAddress) return;
-    try {
-      const response = await client.queryContractSmart(CONTRACT_ADDRESS, {
-        profile: { address: walletAddress }
-      });
-      setHasProfile(!!response.profile);
+      const profile = await fetchProfile(pubkey);
+      setHasProfile(!!profile);
     } catch (error) {
       console.error('Error checking profile:', error);
       setHasProfile(false);
@@ -184,18 +117,18 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (client && walletAddress) {
-      checkProfile();
+    if (walletAddress) {
+      checkProfile(new PublicKey(walletAddress));
     }
-  }, [client, walletAddress]);
+  }, [walletAddress]);
 
   return (
     <Router>
       <Container maxW="container.xl" py={8}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={8}>
           <HStack spacing={4}>
-            <Image src={logo} alt="ATOM Market Logo" height="60px" />
-            <Heading size="2xl">ATOM Market</Heading>
+            <Image src={logo} alt="Solana Market Logo" height="60px" />
+            <Heading size="2xl">Solana Market</Heading>
           </HStack>
           <HStack spacing={4}>
             <IconButton
@@ -204,9 +137,9 @@ export default function App() {
               onClick={toggleColorMode}
               variant="ghost"
             />
-            {walletAddress ? (
+            <WalletMultiButton />
+            {walletAddress && (
               <>
-                <Text>Connected: {walletAddress.slice(0, 8)}...{walletAddress.slice(-4)}</Text>
                 <Button colorScheme="blue" onClick={onListingModalOpen} leftIcon={<AddIcon />}>
                   Create Listing
                 </Button>
@@ -220,8 +153,6 @@ export default function App() {
                   </Button>
                 )}
               </>
-            ) : (
-              <Button onClick={connectWallet}>Connect Keplr</Button>
             )}
           </HStack>
         </Box>
@@ -231,7 +162,6 @@ export default function App() {
             path="/" 
             element={
               <HomePage 
-                client={client}
                 walletAddress={walletAddress}
               />
             } 
@@ -240,8 +170,6 @@ export default function App() {
             path="/listing/:id" 
             element={
               <ListingPage
-                client={client}
-                contractAddress={CONTRACT_ADDRESS}
                 walletAddress={walletAddress}
               />
             } 
@@ -252,8 +180,6 @@ export default function App() {
         <CreateListingModal
           isOpen={isListingModalOpen}
           onClose={onListingModalClose}
-          client={client}
-          contractAddress={CONTRACT_ADDRESS}
           walletAddress={walletAddress}
           onSuccess={() => {
             onListingModalClose();
@@ -264,20 +190,18 @@ export default function App() {
         <CreateProfileModal
           isOpen={isProfileModalOpen}
           onClose={onProfileModalClose}
-          client={client}
-          contractAddress={CONTRACT_ADDRESS}
           walletAddress={walletAddress}
           onSuccess={() => {
             onProfileModalClose();
-            checkProfile();
+            if (walletAddress) {
+              checkProfile(new PublicKey(walletAddress));
+            }
           }}
         />
 
         <ViewProfileModal
           isOpen={isViewProfileOpen}
           onClose={onViewProfileClose}
-          client={client}
-          contractAddress={CONTRACT_ADDRESS}
           walletAddress={walletAddress}
           onProfileDeleted={() => {
             setHasProfile(false);
@@ -286,4 +210,43 @@ export default function App() {
       </Container>
     </Router>
   );
-} 
+}
+
+// Wallet connection wrapper
+function WalletConnectionWrapper({ children }: { children: React.ReactNode }) {
+  return (
+    <ConnectionProvider endpoint={RPC_ENDPOINT}>
+      <WalletProviderWrapper>
+        {children}
+      </WalletProviderWrapper>
+    </ConnectionProvider>
+  );
+}
+
+function WalletProviderWrapper({ children }: { children: React.ReactNode }) {
+  const network = WalletAdapterNetwork.Devnet;
+  const wallets = useMemo(
+    () => [
+      new PhantomWalletAdapter(),
+      new SolflareWalletAdapter(),
+      new TorusWalletAdapter(),
+    ],
+    [network]
+  );
+
+  return (
+    <WalletProvider wallets={wallets} autoConnect>
+      <WalletModalProvider>
+        {children}
+      </WalletModalProvider>
+    </WalletProvider>
+  );
+}
+
+export default function App() {
+  return (
+    <WalletConnectionWrapper>
+      <AppContent />
+    </WalletConnectionWrapper>
+  );
+}
