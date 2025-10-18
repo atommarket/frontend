@@ -73,12 +73,13 @@ export function useSolanaListing() {
         
         // For now, create a simple transaction that just sends a memo
         // In a real implementation, this would interact with your Solana program
+        const memoData = new TextEncoder().encode('Create listing: ' + listingTitle);
         const instruction = new TransactionInstruction({
           keys: [
             { pubkey: publicKey, isSigner: true, isWritable: true }
           ],
           programId: SystemProgram.programId,
-          data: Buffer.from('Create listing: ' + listingTitle),
+          data: memoData as any,
         });
 
         const transaction = new Transaction().add(instruction);
