@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { PublicKey } from '@solana/web3.js';
+import { PublicKey, Connection, SystemProgram, Transaction, TransactionInstruction } from '@solana/web3.js';
 import { useWallet } from '@solana/wallet-adapter-react';
 
 export interface SolanaListing {
@@ -20,8 +20,10 @@ export interface SolanaListing {
   lastEditDate: number | null;
 }
 
+const RPC_ENDPOINT = 'https://api.devnet.solana.com';
+
 export function useSolanaListing() {
-  const { publicKey } = useWallet();
+  const { publicKey, sendTransaction } = useWallet();
   const [listings, setListings] = useState<SolanaListing[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -55,53 +57,84 @@ export function useSolanaListing() {
 
   const createListing = useCallback(
     async (
-      _listingTitle: string,
+      listingTitle: string,
       _externalId: string,
       _text: string,
       _tags: string[],
       _contact: string,
       _priceInSol: number
     ) => {
-      if (!publicKey) {
+      if (!publicKey || !sendTransaction) {
         throw new Error('Wallet not connected');
       }
-      // Placeholder
-      return { tx: 'mock', listingId: 1 };
+
+      try {
+        const connection = new Connection(RPC_ENDPOINT, 'confirmed');
+        
+        // For now, create a simple transaction that just sends a memo
+        // In a real implementation, this would interact with your Solana program
+        const instruction = new TransactionInstruction({
+          keys: [
+            { pubkey: publicKey, isSigner: true, isWritable: true }
+          ],
+          programId: SystemProgram.programId,
+          data: Buffer.from('Create listing: ' + listingTitle),
+        });
+
+        const transaction = new Transaction().add(instruction);
+        transaction.feePayer = publicKey;
+        
+        const { blockhash } = await connection.getLatestBlockhash();
+        transaction.recentBlockhash = blockhash;
+
+        // Send transaction - this will prompt wallet to sign
+        const signature = await sendTransaction(transaction, connection);
+        
+        // Wait for confirmation
+        await connection.confirmTransaction(signature, 'confirmed');
+
+        console.log('Listing transaction confirmed:', signature);
+
+        return { tx: signature, listingId: 1 };
+      } catch (error) {
+        console.error('Error creating listing:', error);
+        throw error;
+      }
     },
-    [publicKey]
+    [publicKey, sendTransaction]
   );
 
   const purchaseListing = useCallback(async (_listingId: number) => {
-    if (!publicKey) {
+    if (!publicKey || !sendTransaction) {
       throw new Error('Wallet not connected');
     }
     // Placeholder
     return 'mock';
-  }, [publicKey]);
+  }, [publicKey, sendTransaction]);
 
   const markAsShipped = useCallback(async (_listingId: number) => {
-    if (!publicKey) {
+    if (!publicKey || !sendTransaction) {
       throw new Error('Wallet not connected');
     }
     // Placeholder
     return 'mock';
-  }, [publicKey]);
+  }, [publicKey, sendTransaction]);
 
   const markAsReceived = useCallback(async (_listingId: number, _sellerPubkey: PublicKey) => {
-    if (!publicKey) {
+    if (!publicKey || !sendTransaction) {
       throw new Error('Wallet not connected');
     }
     // Placeholder
     return 'mock';
-  }, [publicKey]);
+  }, [publicKey, sendTransaction]);
 
   const deleteListing = useCallback(async (_listingId: number) => {
-    if (!publicKey) {
+    if (!publicKey || !sendTransaction) {
       throw new Error('Wallet not connected');
     }
     // Placeholder
     return 'mock';
-  }, [publicKey]);
+  }, [publicKey, sendTransaction]);
 
   const fetchListingById = useCallback(async (_listingId: number) => {
     // Placeholder
