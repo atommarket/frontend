@@ -110,7 +110,18 @@ export function useSolanaListing() {
         console.error('Error creating listing:', error);
         console.error('Error message:', error?.message);
         console.error('Error stack:', error?.stack);
-        throw error;
+        console.error('Full error object:', JSON.stringify(error, null, 2));
+        
+        let errorMessage = 'An unexpected error occurred';
+        
+        if (error?.message) {
+          errorMessage = error.message;
+        } else if (typeof error === 'string') {
+          errorMessage = error;
+        }
+        
+        const customError = new Error(errorMessage);
+        throw customError;
       }
     },
     [publicKey, sendTransaction]
