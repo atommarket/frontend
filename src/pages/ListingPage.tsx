@@ -16,7 +16,7 @@ import {
   useColorModeValue,
 } from '@chakra-ui/react';
 import { ArrowBackIcon, ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
-import { PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { SolanaListing, useSolanaListing } from '../hooks/useSolanaListing';
 import { useIPFS } from '../hooks/useIPFS';
 
@@ -114,7 +114,7 @@ export default function ListingPage({ walletAddress }: ListingPageProps) {
   const handleMarkReceived = async () => {
     if (!walletAddress || !listing) return;
     try {
-      await markAsReceived(listing.listingId, new PublicKey(listing.seller));
+      await markAsReceived(listing.listingId);
 
       // After marking as received, unpin the IPFS files
       if (listing.externalId) {

@@ -1,7 +1,7 @@
 import { Box, Button, Text, VStack, HStack, useToast, Image, Spinner, Badge, useColorModeValue } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PublicKey, LAMPORTS_PER_SOL } from '@solana/web3.js';
+import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { SolanaListing, useSolanaListing } from '../hooks/useSolanaListing';
 import { useIPFS } from '../hooks/useIPFS';
 
@@ -89,7 +89,7 @@ export default function ListingCard({
   const handleMarkReceived = async () => {
     if (!walletAddress) return;
     try {
-      await markAsReceived(listing.listingId, new PublicKey(listing.seller));
+      await markAsReceived(listing.listingId);
 
       // After marking as received, unpin the IPFS files
       if (listing.externalId) {
