@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { PublicKey, Connection, SystemProgram, Transaction, TransactionInstruction } from '@solana/web3.js';
+import { PublicKey, Connection, SystemProgram, Transaction } from '@solana/web3.js';
 import { useWallet } from '@solana/wallet-adapter-react';
 
 export interface SolanaListing {
@@ -57,7 +57,7 @@ export function useSolanaListing() {
 
   const createListing = useCallback(
     async (
-      listingTitle: string,
+      _listingTitle: string,
       _externalId: string,
       _text: string,
       _tags: string[],
@@ -75,15 +75,11 @@ export function useSolanaListing() {
         console.log('Public key:', publicKey.toString());
         console.log('SendTransaction available:', !!sendTransaction);
         
-        // For now, create a simple transaction that just sends a memo
-        // In a real implementation, this would interact with your Solana program
-        const memoData = new TextEncoder().encode('Create listing: ' + listingTitle);
-        const instruction = new TransactionInstruction({
-          keys: [
-            { pubkey: publicKey, isSigner: true, isWritable: true }
-          ],
-          programId: SystemProgram.programId,
-          data: memoData as any,
+        // Just do a simple SOL transfer to yourself to prove it works
+        const instruction = SystemProgram.transfer({
+          fromPubkey: publicKey,
+          toPubkey: publicKey, // Send to yourself
+          lamports: 1000, // 0.000001 SOL
         });
 
         const transaction = new Transaction().add(instruction);
@@ -93,13 +89,14 @@ export function useSolanaListing() {
         const { blockhash } = await connection.getLatestBlockhash();
         transaction.recentBlockhash = blockhash;
 
-        console.log('Sending transaction to wallet...');
+        console.log('Sending transaction to wallet for signing...');
         // Send transaction - this will prompt wallet to sign
         let signature: string;
         try {
           signature = await sendTransaction(transaction, connection);
+          console.log('✅ Got signature from wallet:', signature);
         } catch (walletError: any) {
-          console.error('WALLET/SEND ERROR:', walletError);
+          console.error('❌ WALLET/SEND ERROR:', walletError);
           console.error('Wallet error message:', walletError?.message);
           console.error('Wallet error code:', walletError?.code);
           throw walletError;
@@ -109,7 +106,15 @@ export function useSolanaListing() {
         console.log('Waiting for confirmation...');
         
         // Wait for confirmation
-        await connection.confirmTransaction(signature, 'confirmed');
+        try {
+          console.log('Calling confirmTransaction with signature:', signature);
+          const confirmation = await connection.confirmTransaction(signature, 'confirmed');
+          console.log('✅ Transaction confirmed:', confirmation);
+        } catch (confirmError: any) {
+          console.error('❌ CONFIRM ERROR:', confirmError);
+          console.error('Confirm error message:', confirmError?.message);
+          throw new Error(`Confirmation failed: ${confirmError?.message || 'Unknown error'}`);
+        }
 
         console.log('Listing transaction confirmed:', signature);
 
