@@ -95,7 +95,15 @@ export function useSolanaListing() {
 
         console.log('Sending transaction to wallet...');
         // Send transaction - this will prompt wallet to sign
-        const signature = await sendTransaction(transaction, connection);
+        let signature: string;
+        try {
+          signature = await sendTransaction(transaction, connection);
+        } catch (walletError: any) {
+          console.error('WALLET/SEND ERROR:', walletError);
+          console.error('Wallet error message:', walletError?.message);
+          console.error('Wallet error code:', walletError?.code);
+          throw walletError;
+        }
         
         console.log('Transaction signed, signature:', signature);
         console.log('Waiting for confirmation...');
