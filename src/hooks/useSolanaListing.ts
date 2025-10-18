@@ -69,7 +69,11 @@ export function useSolanaListing() {
       }
 
       try {
+        console.log('Creating transaction...');
         const connection = new Connection(RPC_ENDPOINT, 'confirmed');
+        
+        console.log('Public key:', publicKey.toString());
+        console.log('SendTransaction available:', !!sendTransaction);
         
         // For now, create a simple transaction that just sends a memo
         // In a real implementation, this would interact with your Solana program
@@ -85,11 +89,16 @@ export function useSolanaListing() {
         const transaction = new Transaction().add(instruction);
         transaction.feePayer = publicKey;
         
+        console.log('Getting latest blockhash...');
         const { blockhash } = await connection.getLatestBlockhash();
         transaction.recentBlockhash = blockhash;
 
+        console.log('Sending transaction to wallet...');
         // Send transaction - this will prompt wallet to sign
         const signature = await sendTransaction(transaction, connection);
+        
+        console.log('Transaction signed, signature:', signature);
+        console.log('Waiting for confirmation...');
         
         // Wait for confirmation
         await connection.confirmTransaction(signature, 'confirmed');
@@ -97,8 +106,10 @@ export function useSolanaListing() {
         console.log('Listing transaction confirmed:', signature);
 
         return { tx: signature, listingId: 1 };
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error creating listing:', error);
+        console.error('Error message:', error?.message);
+        console.error('Error stack:', error?.stack);
         throw error;
       }
     },
