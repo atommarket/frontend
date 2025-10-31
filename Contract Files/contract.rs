@@ -21,21 +21,12 @@ use crate::state::{
 
 const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
-//Admin & fee wallet
-const ADMIN: &str = "juno107zhxnyyvrskwv8vnqhrmfzkm8xlzphksuvdpz";
-//FOR TESTING PURPOSES ONLY
-// const ADMIN: &str = "cosmwasm1g7l9mla39rtnlaw6awq6r9w98u8yya35fnhxpsvf3q2qy3ymrwnqpwenn7";
-//limit ipfs link size to prevent link duplication
+const ADMIN: &str = "cosmos1qa6supftg80qh93u6894lsg4q4m25ftgfsadtw";
 const MAX_ID_LENGTH: usize = 128;
-//Block size is limited so make sure text input is less than 500 characters
 const MAX_TEXT_LENGTH: usize = 499;
-//julian dedicated gateway
 const IPFS: &str = "https://gateway.pinata.cloud/ipfs/";
-const JUNO: &str = "ujuno";
-//Hardcode the arbiters of the contract for dispute resolution
-const ARBITERS: [&str; 1] = ["juno107zhxnyyvrskwv8vnqhrmfzkm8xlzphksuvdpz"];
-//FOR TESTING PURPOSES ONLY
-// const ARBITERS: [&str; 1] = ["cosmwasm1g7l9mla39rtnlaw6awq6r9w98u8yya35fnhxpsvf3q2qy3ymrwnqpwenn7"];
+const ATOM: &str = "uatom";
+const ARBITERS: [&str; 1] = ["cosmos1hgrhzkhfjr4rkumxzcrnpddd4qmddnc4lsmezc"];
 
 #[entry_point]
 pub fn instantiate(
@@ -152,8 +143,6 @@ fn execute_create_listing(
     contact: String,
     price: u64,
 ) -> Result<Response, ContractError> {
-    //In future, fees will be turned on for post creation (maybe), reference line below.
-    // assert_sent_exact_coin(&info.funds, Some(vec![coin(1_000_000, JUNO)]))?;
     if text.len() > MAX_TEXT_LENGTH {
         return Err(ContractError::TooMuchText {});
     }
@@ -207,8 +196,6 @@ fn execute_edit_listing(
     tags: Vec<String>,
     price: u64,
 ) -> Result<Response, ContractError> {
-    //Potential edit fee in future to pay for IPFS storage
-    // assert_sent_exact_coin(&info.funds, Some(vec![Coin::new(200_000u128, JUNO)]))?;
     if text.len() > MAX_TEXT_LENGTH {
         return Err(ContractError::TooMuchText {});
     }
@@ -341,12 +328,12 @@ fn execute_sign_received(
     // Create bank messages for both seller and admin
     let seller_msg = BankMsg::Send {
         to_address: listing.seller.to_string(),
-        amount: vec![coin(seller_amount, JUNO)],
+        amount: vec![coin(seller_amount, ATOM)],
     };
 
     let admin_msg = BankMsg::Send {
         to_address: ADMIN.to_string(),
-        amount: vec![coin(fee_amount, JUNO)],
+        amount: vec![coin(fee_amount, ATOM)],
     };
 
     // Update transaction counts for both buyer and seller
@@ -406,7 +393,7 @@ fn execute_purchase(
     if listing.bought {
         return Err(ContractError::AlreadyPurchased {});
     }
-    assert_sent_exact_coin(&info.funds, Some(vec![coin(listing.price as u128, JUNO)]))?;
+    assert_sent_exact_coin(&info.funds, Some(vec![coin(listing.price as u128, ATOM)]))?;
     listing.buyer = Some(info.sender.to_string());
     listing.bought = true;
     LISTING.save(deps.storage, listing_id, &listing)?;
@@ -431,7 +418,7 @@ fn execute_cancel_purchase(
     }
     let bank_msg = BankMsg::Send {
         to_address: listing.buyer.unwrap(),
-        amount: vec![coin(listing.price as u128, JUNO)],
+        amount: vec![coin(listing.price as u128, ATOM)],
     };
     listing.bought = false;
     listing.buyer = None;
@@ -462,10 +449,9 @@ fn execute_arbitrate(
     if funds_recipient != listing.seller && funds_recipient != listing.buyer.unwrap() {
         return Err(ContractError::InvalidFundsRecipient {});
     }
-    //send funds to slated recipient
     let bank_msg = BankMsg::Send {
         to_address: funds_recipient,
-        amount: vec![coin(listing.price as u128, JUNO)],
+        amount: vec![coin(listing.price as u128, ATOM)],
     };
     //remove listing from state
     LISTING.remove(deps.storage, listing_id);
@@ -521,10 +507,9 @@ fn execute_seller_cancel_sale(
         return Err(ContractError::NotPurchased {});
     }
 
-    // Create bank message to return funds to buyer
     let bank_msg = BankMsg::Send {
         to_address: listing.buyer.clone().unwrap(),
-        amount: vec![coin(listing.price as u128, JUNO)],
+        amount: vec![coin(listing.price as u128, ATOM)],
     };
 
     // Reset purchase-related fields

@@ -71,7 +71,7 @@ export default function ListingCard({
         contractAddress,
         { purchase: { listing_id: listing.listing_id } },
         {
-          amount: [coin(listing.price, 'ujuno')],
+          amount: [coin(listing.price, 'uatom')],
           gas: "500000",
         }
       );
@@ -255,7 +255,7 @@ export default function ListingCard({
 
         <Text>{listing.text}</Text>
         <HStack>
-          <Text>Price: {listing.price / 1_000_000} JUNO</Text>
+          <Text>Price: {listing.price / 1_000_000} ATOM</Text>
           {listing.bought && <Badge colorScheme="green">SOLD</Badge>}
         </HStack>
         <Text>Seller: {listing.seller}</Text>

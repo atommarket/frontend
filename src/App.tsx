@@ -31,42 +31,42 @@ declare global {
   interface Window extends KeplrWindow {}
 }
 
-const CONTRACT_ADDRESS = 'juno1fucsaa4mukx86z5sfxm3k3445eh8c4vcpejzu93457wufh4s6zms4qz6ra';
+const CONTRACT_ADDRESS = 'cosmos1m6re27fmzy8l9zsy3d2rflvrmsfgy8qyznaj3lx3grlwsuf8ryesvgmrl9';
 
-// Chain configuration for Juno
+// Chain configuration for Cosmos Hub
 const chainConfig = {
-  chainId: 'juno-1',
-  chainName: 'Juno',
-  rpc: 'https://rpc-juno.itastakers.com',
-  rest: 'https://lcd-juno.itastakers.com',
+  chainId: 'cosmoshub-4',
+  chainName: 'Cosmos Hub',
+  rpc: 'https://rpc.cosmos.network',
+  rest: 'https://lcd.cosmos.network',
   bip44: {
     coinType: 118,
   },
   bech32Config: {
-    bech32PrefixAccAddr: 'juno',
-    bech32PrefixAccPub: 'junopub',
-    bech32PrefixValAddr: 'junovaloper',
-    bech32PrefixValPub: 'junovaloperpub',
-    bech32PrefixConsAddr: 'junovalcons',
-    bech32PrefixConsPub: 'junovalconspub',
+    bech32PrefixAccAddr: 'cosmos',
+    bech32PrefixAccPub: 'cosmospub',
+    bech32PrefixValAddr: 'cosmosvaloper',
+    bech32PrefixValPub: 'cosmosvaloperpub',
+    bech32PrefixConsAddr: 'cosmosvalcons',
+    bech32PrefixConsPub: 'cosmosvalconspub',
   },
   currencies: [
     {
-      coinDenom: 'JUNO',
-      coinMinimalDenom: 'ujuno',
+      coinDenom: 'ATOM',
+      coinMinimalDenom: 'uatom',
       coinDecimals: 6,
     },
   ],
   feeCurrencies: [
     {
-      coinDenom: 'JUNO',
-      coinMinimalDenom: 'ujuno',
+      coinDenom: 'ATOM',
+      coinMinimalDenom: 'uatom',
       coinDecimals: 6,
     },
   ],
   stakeCurrency: {
-    coinDenom: 'JUNO',
-    coinMinimalDenom: 'ujuno',
+    coinDenom: 'ATOM',
+    coinMinimalDenom: 'uatom',
     coinDecimals: 6,
   },
   gasPriceStep: {

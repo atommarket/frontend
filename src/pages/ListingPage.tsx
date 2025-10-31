@@ -101,14 +101,14 @@ export default function ListingPage({ client, contractAddress, walletAddress }: 
   const handlePurchase = async () => {
     if (!client || !walletAddress || !listing) return;
     try {
-      console.log('Attempting purchase with price:', listing.price, 'ujuno');
-      const funds = [{ amount: listing.price.toString(), denom: 'ujuno' }];
+      console.log('Attempting purchase with price:', listing.price, 'uatom');
+      const funds = [{ amount: listing.price.toString(), denom: 'uatom' }];
       await client.execute(
         walletAddress,
         contractAddress,
         { purchase: { listing_id: listing.listing_id } },
         {
-          amount: [{ amount: "37500", denom: "ujuno" }],
+          amount: [{ amount: "37500", denom: "uatom" }],
           gas: "500000"
         },
         "",
@@ -393,7 +393,7 @@ export default function ListingPage({ client, contractAddress, walletAddress }: 
             <Heading as="h1" size="xl">{listing.listing_title}</Heading>
             
             <HStack>
-              <Badge colorScheme="blue">Price: {listing.price / 1_000_000} JUNO</Badge>
+              <Badge colorScheme="blue">Price: {listing.price / 1_000_000} ATOM</Badge>
               {listing.bought && <Badge colorScheme="green">Sold</Badge>}
               {listing.shipped && <Badge colorScheme="orange">Shipped</Badge>}
               {listing.received && <Badge colorScheme="green">Received</Badge>}
@@ -438,7 +438,7 @@ export default function ListingPage({ client, contractAddress, walletAddress }: 
                   onClick={handlePurchase}
                   mb={4}
                 >
-                  Purchase for {listing.price / 1_000_000} JUNO
+                  Purchase for {listing.price / 1_000_000} ATOM
                 </Button>
               )}
               

@@ -186,7 +186,7 @@ export default function CreateListingModal({
           text: formData.text,
           tags: formData.tags.split(',').map(t => t.trim()).filter(t => t),
           contact: formData.contact,
-          price: Math.floor(price * 1_000_000), // Convert to ujuno
+          price: Math.floor(price * 1_000_000), // Convert to uatom
         }
       };
 
@@ -266,7 +266,7 @@ export default function CreateListingModal({
             </FormControl>
             
             <FormControl>
-              <FormLabel>Price (JUNO)</FormLabel>
+              <FormLabel>Price (ATOM)</FormLabel>
               <Input
                 type="number"
                 value={formData.price}
