@@ -230,9 +230,8 @@ export default function ListingCard({
           </Box>
         ) : images.length > 0 && (
           <Box position="relative" w="full">
-            <Box
-              as="img"
-              key={`card-image-${currentImageIndex}-${images[currentImageIndex]}`}
+            <Image
+              key={currentImageIndex}
               src={images[currentImageIndex]}
               alt={`${listing.listing_title} - Image ${currentImageIndex + 1}`}
               borderRadius="md"
@@ -240,11 +239,6 @@ export default function ListingCard({
               objectFit="cover"
               w="full"
               transition="max-height 0.2s"
-              onError={(e: any) => {
-                console.error('Card image load error:', e);
-                console.error('Failed URL:', images[currentImageIndex]);
-              }}
-              onLoad={() => console.log('Card image loaded:', images[currentImageIndex])}
             />
             {images.length > 1 && (
               <HStack 

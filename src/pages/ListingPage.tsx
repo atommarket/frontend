@@ -311,20 +311,14 @@ export default function ListingPage({ client, contractAddress, walletAddress }: 
           <Box position="relative">
             {images.length > 0 ? (
               <>
-                <Box
-                  as="img"
-                  key={`image-${currentImageIndex}-${images[currentImageIndex]}`}
+                <Image
+                  key={currentImageIndex}
                   src={images[currentImageIndex]}
                   alt={`${listing.listing_title} - Image ${currentImageIndex + 1}`}
                   borderRadius="lg"
                   w="full"
                   maxH="600px"
                   objectFit="cover"
-                  onError={(e: any) => {
-                    console.error('Image load error:', e);
-                    console.error('Failed URL:', images[currentImageIndex]);
-                  }}
-                  onLoad={() => console.log('Image loaded successfully:', images[currentImageIndex])}
                 />
                 {images.length > 1 && (
                   <HStack 
