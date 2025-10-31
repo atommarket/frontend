@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate';
 import { GasPrice } from '@cosmjs/stargate';
 
-const RPC_ENDPOINT = 'https://rpc.cosmoshub.strange.love';
+const RPC_ENDPOINT = 'https://cosmos-rpc.polkachu.com:443';
 
 export function useWallet() {
   const [client, setClient] = useState<SigningCosmWasmClient | null>(null);
