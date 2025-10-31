@@ -77,7 +77,11 @@ export default function ListingPage({ client, contractAddress, walletAddress }: 
           if (processedListing.external_id) {
             const imageResponse = await fetch(processedListing.external_id);
             const metadata: ImageMetadata = await imageResponse.json();
-            setImages(metadata.images.map(img => img.url));
+            console.log('Fetched metadata:', metadata);
+            console.log('Number of images:', metadata.images?.length);
+            const imageUrls = metadata.images.map(img => img.url);
+            console.log('Image URLs:', imageUrls);
+            setImages(imageUrls);
           }
         } else {
           throw new Error('Invalid listing response format');

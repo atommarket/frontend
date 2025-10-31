@@ -47,7 +47,11 @@ export default function ListingCard({
       try {
         const response = await fetch(listing.external_id);
         const metadata: ImageMetadata = await response.json();
-        setImages(metadata.images.map(img => img.url));
+        console.log('ListingCard - Fetched metadata:', metadata);
+        console.log('ListingCard - Number of images:', metadata.images?.length);
+        const imageUrls = metadata.images.map(img => img.url);
+        console.log('ListingCard - Image URLs:', imageUrls);
+        setImages(imageUrls);
       } catch (error) {
         console.error('Error fetching images:', error);
         toast({
