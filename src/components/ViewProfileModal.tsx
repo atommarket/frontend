@@ -20,7 +20,7 @@ import {
   StatNumber,
   StatGroup,
 } from '@chakra-ui/react';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate';
 import { useProfile } from '../hooks/useProfile';
 
@@ -47,11 +47,11 @@ export default function ViewProfileModal({
   const { profile, fetchProfile, deleteProfile } = useProfile(client, contractAddress);
 
   // Fetch profile when modal opens
-  useState(() => {
+  useEffect(() => {
     if (isOpen && walletAddress) {
       fetchProfile(walletAddress);
     }
-  });
+  }, [isOpen, walletAddress, fetchProfile]);
 
   const handleDelete = async () => {
     if (!client || !walletAddress) return;
@@ -71,8 +71,6 @@ export default function ViewProfileModal({
     setIsDeleteDialogOpen(false);
   };
 
-  if (!profile) return null;
-
   return (
     <>
       <Modal isOpen={isOpen} onClose={onClose}>
@@ -81,6 +79,11 @@ export default function ViewProfileModal({
           <ModalHeader>Your Profile</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
+            {!profile ? (
+              <VStack spacing={6} pb={6} align="center">
+                <Text>Loading profile...</Text>
+              </VStack>
+            ) : (
             <VStack spacing={6} pb={6} align="stretch">
               <Text fontSize="xl" fontWeight="bold">
                 {profile.profile_name}
@@ -115,6 +118,7 @@ export default function ViewProfileModal({
                 Delete Profile
               </Button>
             </VStack>
+            )}
           </ModalBody>
         </ModalContent>
       </Modal>
