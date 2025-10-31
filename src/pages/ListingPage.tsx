@@ -312,12 +312,15 @@ export default function ListingPage({ client, contractAddress, walletAddress }: 
             {images.length > 0 ? (
               <>
                 <Image
+                  key={`image-${currentImageIndex}-${images[currentImageIndex]}`}
                   src={images[currentImageIndex]}
                   alt={`${listing.listing_title} - Image ${currentImageIndex + 1}`}
                   borderRadius="lg"
                   w="full"
                   maxH="600px"
                   objectFit="cover"
+                  onError={(e) => console.error('Image load error:', e, images[currentImageIndex])}
+                  loading="eager"
                 />
                 {images.length > 1 && (
                   <HStack 
