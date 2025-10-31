@@ -239,6 +239,8 @@ export default function ListingCard({
               objectFit="cover"
               w="full"
               transition="max-height 0.2s"
+              fallback={<Spinner />}
+              ignoreFallback={false}
             />
             {images.length > 1 && (
               <HStack 

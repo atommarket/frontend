@@ -319,6 +319,8 @@ export default function ListingPage({ client, contractAddress, walletAddress }: 
                   w="full"
                   maxH="600px"
                   objectFit="cover"
+                  fallback={<Spinner />}
+                  ignoreFallback={false}
                 />
                 {images.length > 1 && (
                   <HStack 
