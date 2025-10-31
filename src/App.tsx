@@ -37,8 +37,8 @@ const CONTRACT_ADDRESS = 'cosmos1m6re27fmzy8l9zsy3d2rflvrmsfgy8qyznaj3lx3grlwsuf
 const chainConfig = {
   chainId: 'cosmoshub-4',
   chainName: 'Cosmos Hub',
-  rpc: 'https://rpc.cosmos.network',
-  rest: 'https://lcd.cosmos.network',
+  rpc: 'https://rpc.cosmoshub.strange.love',
+  rest: 'https://api.cosmoshub.strange.love',
   bip44: {
     coinType: 118,
   },
